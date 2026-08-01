@@ -1,4 +1,3 @@
-﻿using System;
 using BepInEx.Logging;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Collections.Generic;
@@ -7,6 +6,7 @@ using SaveData;
 using SV;
 using SV.Chara;
 using SV.MyRoomScene;
+using System;
 
 namespace SVS_CustomGameBalance
 {
@@ -1490,13 +1490,9 @@ namespace SVS_CustomGameBalance
             }          
             CustomGameBalancePlugin.Log.LogInfo($"No available characters for night visit");
             nightType = -1;
-            //selectedAI = null;
             selectedCharaID = -1;
         }
-        public static AI GetSelectedChara()
-        {
-            return selectedAI;
-        }
+
         public static void NightEventChance(NightEventManager nightEvent, Actor chara)
         {
             if (chara == null) return;
@@ -1669,6 +1665,16 @@ namespace SVS_CustomGameBalance
                     break;
                     
                 case 29://OfferToTakePartInARelationship
+                    if (CustomGameBalancePlugin.GetNormalVirtueBalance())
+                    {
+                        if (actor.gameParameter.LvChastity == 2)
+                        {
+                            if (actor.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(targetCharaID))
+                            {
+                                if (actor.charasGameParam.sensitivity.tableFavorabiliry[targetCharaID].longSensitivityCounts[0] < 11) return -1;
+                            }
+                        }
+                    }
                     break;
                     
                 case 30://BrokeItOff
@@ -1681,19 +1687,58 @@ namespace SVS_CustomGameBalance
                     break;
 
                 case 33://Kiss
+                    if (CustomGameBalancePlugin.GetNormalVirtueBalance())
+                    {
+                        if (actor.gameParameter.LvChastity == 2)
+                        {
+                            if (actor.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(targetCharaID))
+                            {
+                                if (actor.charasGameParam.sensitivity.tableFavorabiliry[targetCharaID].longSensitivityCounts[0] < 11) return -1;
+                            }
+                        }
+                    }
                     break;
 
                 case 34://Touch
+                    if (CustomGameBalancePlugin.GetNormalVirtueBalance())
+                    {
+                        if (actor.gameParameter.LvChastity == 2)
+                        {
+                            if (actor.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(targetCharaID))
+                            {
+                                if (actor.charasGameParam.sensitivity.tableFavorabiliry[targetCharaID].longSensitivityCounts[0] < 11) return -1;
+                            }
+                        }
+                    }
                     break;
 
                 case 35://H
+                    if (CustomGameBalancePlugin.GetNormalVirtueBalance())
+                    {
+                        if (actor.gameParameter.LvChastity == 2)
+                        {
+                            if (actor.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(targetCharaID))
+                            {
+                                if (actor.charasGameParam.sensitivity.tableFavorabiliry[targetCharaID].longSensitivityCounts[0] < 11) return -1;
+                            }
+                        }
+                    }
                     break;
 
                 case 36://
                     break;
 
                 case 37://TakingOnesLover
-
+                    if (CustomGameBalancePlugin.GetNormalVirtueBalance())
+                    {
+                        if (actor.gameParameter.LvChastity == 2)
+                        {
+                            if (actor.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(targetCharaID))
+                            {
+                                if (actor.charasGameParam.sensitivity.tableFavorabiliry[targetCharaID].longSensitivityCounts[0] < 11) return -1;
+                            }
+                        }
+                    }
                     break;
 
                 case 38://
@@ -1738,7 +1783,7 @@ namespace SVS_CustomGameBalance
                 case 51://
                     break;
 
-                case 52://LetsHave3P
+                case 52://LetsHave3P [Interruption]
                     break;
 
                 case 53://
@@ -1768,6 +1813,13 @@ namespace SVS_CustomGameBalance
                         if (actor.charasGameParam.sensitivity.tableFavorabiliry[targetCharaID].ranks[0] == SensitivityParameter.Rank.HIGH || actor.charasGameParam.sensitivity.tableFavorabiliry[targetCharaID].ranks[0] == SensitivityParameter.Rank.MAX) return targetCharaID;
                         return -1;
                     }
+                    else if (actor.gameParameter.LvChastity == 2 && CustomGameBalancePlugin.GetNormalVirtueBalance())
+                    {
+                        if (actor.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(targetCharaID))
+                        {
+                            if (actor.charasGameParam.sensitivity.tableFavorabiliry[targetCharaID].longSensitivityCounts[0] < 11) return -1;
+                        }
+                    }
                     break;
 
                 case 60://TradePossessions
@@ -1776,10 +1828,12 @@ namespace SVS_CustomGameBalance
                 case 61://BadRumorPursuit
                     break;
 
-                case 62://
+                case 62://AbductTheSubject
+                    if (CustomGameBalancePlugin.GetKidnapOption()) return -1;                  
                     break;
 
-                case 63://
+                case 63://AbductionOfTheTargetSubject
+                    if (CustomGameBalancePlugin.GetKidnapOption()) return -1;
                     break;
 
                 case 64://GoodMorningKiss
@@ -1885,6 +1939,331 @@ namespace SVS_CustomGameBalance
                     break;
             }
             return targetCharaID;
+        }
+        public static void ThreeP_NPCAskCondition(SVThinking thinking, int rate)
+        {
+            if (thinking == null) return;
+            if (thinking._charaCtrl == null) return;
+            if (thinking._charaCtrl.ai == null) return;
+            if (thinking._charaCtrl.ai._charaData == null) return;
+            if (thinking._charaCtrl.ai._charaData.charasGameParam.commandNo == 77) return;
+
+            if (thinking._charaCtrl.target.kind == BehaviourController.TargetInfo.TargetKind.Chara)
+            {
+                if (thinking._charaCtrl.ai._charaData.gameParameter.LvChastity > 2)
+                {
+                    if (thinking._charaCtrl.ai._charaData.gameParameter.isVirgin) return;
+                }
+
+                if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"**********************");
+                if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Init NPC asking for 3P");
+                if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"**********************");
+
+                bool askForThreeP = false;
+                int targetID = thinking._charaCtrl.target.id;
+                int commandID = thinking._charaCtrl.AI._charaData.CommandNo;
+
+                if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Original commandNo: {commandID}");
+
+                int chance = _rnd.Next(0, 100);
+                if (rate == 0)
+                {
+                    switch (commandID)
+                    {
+                        case 35:
+                            if (chance < 35) askForThreeP = true;
+                            break;
+                        case 37:
+                            if (chance < 15) askForThreeP = true;
+                            break;
+                    }
+                }
+                else
+                {                  
+                    if (rate > chance)
+                    {
+                        askForThreeP = true;
+                    }
+                }
+
+                if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Is NPC asking for 3P: {askForThreeP} rate: {rate}/{chance}");
+                if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Rate: {rate}/{chance}");
+
+                if (askForThreeP)
+                {
+                    var sexualTarget = thinking._charaCtrl.ai._charaData.gameParameter.SexualTarget;
+                    var sex = thinking._charaCtrl.ai._charaData.parameter.sex;
+                    var virtue = thinking._charaCtrl.ai._charaData.gameParameter.LvChastity;
+                    var charaSensitivity = thinking._charaCtrl.ai._charaData.charasGameParam.sensitivity;
+                    var charaActor = thinking._charaCtrl.ai._charaData;
+
+                    if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"CharaID: {charaActor.charasGameParam.Index}");
+                    if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"TargetID: {targetID}");
+
+                    if (Game.Charas.TryGetValue(targetID, out var targetChara))
+                    {
+                        switch (sexualTarget)
+                        {
+                            case 0://Hetero
+                                int oppositeSex = -1;
+                                if (sex == 1) oppositeSex = 0;
+                                else oppositeSex = 1;
+                                SelectThreeP_Partner(charaActor, targetChara, oppositeSex, virtue);
+                                break;
+                            case 4://Homo
+                                if (sex == 0) return;
+                                else if (sex == 1 && thinking._charaCtrl.ai._charaData.parameter.isFutanari)
+                                {
+                                    SelectThreeP_Partner(charaActor, targetChara, sex, virtue);
+                                }
+                                break;
+                            default:
+                                SelectThreeP_Partner(charaActor, targetChara, -1, virtue);
+                                break;
+                        }                      
+                    }
+                }
+            }
+        }
+        private static void SelectThreeP_Partner(Actor _actor, Actor targetActor, int sexType, int virtueLV)
+        {
+            if (_actor.parameter.sex == 0 && targetActor.parameter.sex == 0 && sexType == 0) return;
+
+            Dictionary<int, int> charaWeights = new Dictionary<int, int>();
+            var targetID = targetActor.charasGameParam.Index;
+            int summedWeights = 0;
+            //bool isFuta = false;
+
+            if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Selecting 3P Partner: sex type {sexType}");
+            if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Chara 1: {_actor.charasGameParam.Index} sex: {_actor.parameter.sex} virtue: {virtueLV}");
+            if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Chara 2: {targetID} sex: {targetActor.parameter.sex}");
+
+            if (sexType == -1)
+            {
+                if (_actor.parameter.sex == 0 && targetActor.parameter.sex == 0) sexType = 1;
+                if (_actor.parameter.sex == 1 && targetActor.parameter.sex == 1)
+                {
+                    //if (!targetActor.parameter.isFutanari && !_actor.parameter.isFutanari) isFuta = true;
+                    sexType = 0;
+                }
+            }
+
+            //Check for Lovers
+            if (_actor.charasGameParam.memory.lovers.Count > 0)
+            {
+                foreach (var lover in _actor.charasGameParam.memory.lovers)
+                {
+                    if (!charaWeights.ContainsKey(lover.id) && lover.id != targetID)
+                    {
+                        if (Game.Charas.TryGetValue(lover.id, out Actor pcCharacter))
+                        {
+                            if (!pcCharacter.IsPC) charaWeights.Add(lover.id, 30);
+                        }
+                    }
+                }
+            }
+
+            //Check if it has the same lover
+            if (targetActor.charasGameParam.memory.lovers.Count > 0)
+            {
+                foreach (var lover in targetActor.charasGameParam.memory.lovers)
+                {
+                    if (charaWeights.ContainsKey(lover.id))
+                    {
+                        if (Game.Charas.TryGetValue(lover.id, out Actor pcCharacter))
+                        {
+                            if (!pcCharacter.IsPC) charaWeights[lover.id] += 20;
+                        }
+                    } 
+                }
+            }
+
+            //Check favorability points
+            if (_actor.charasGameParam.sensitivity.tableFavorabiliry.Count > 0)
+            {
+                foreach (var charaFavor in _actor.charasGameParam.sensitivity.tableFavorabiliry)
+                {
+                    if (Game.Charas.TryGetValue(charaFavor.Key, out Actor thatCharacter))
+                    {
+                        if (thatCharacter.charasGameParam.Index != targetID && !thatCharacter.IsPC)
+                        {
+                            if (thatCharacter.parameter.sex == sexType && sexType != -1)
+                            {
+                                switch (virtueLV)
+                                {
+                                    case 2://Normal Virtue/Chastity
+                                        if (charaWeights.ContainsKey(charaFavor.Key))
+                                        {
+                                            if (charaFavor.Value.longSensitivityCounts[0] > 10) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            if (charaFavor.Value.longSensitivityCounts[1] > 10) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[1];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        else
+                                        {
+                                            charaWeights.Add(charaFavor.Key, 0);
+                                            if (charaFavor.Value.longSensitivityCounts[0] > 10) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            if (charaFavor.Value.longSensitivityCounts[1] > 10) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[1];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        break;
+                                    case 3://High Virtue/Chastity
+                                        if (charaWeights.ContainsKey(charaFavor.Key))
+                                        {
+                                            if (charaFavor.Value.longSensitivityCounts[0] > 20) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        else
+                                        {
+                                            charaWeights.Add(charaFavor.Key, 0);
+                                            if (charaFavor.Value.longSensitivityCounts[0] > 20) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        break;
+                                    case 4://Highest Virtue/Chastity
+                                        if (_actor.charasGameParam.memory.pairTable.ContainsKey(charaFavor.Key))
+                                        {
+                                            if (_actor.charasGameParam.memory.pairTable[charaFavor.Key].TotalH > 0)
+                                            {
+                                                if (charaWeights.ContainsKey(charaFavor.Key))
+                                                {
+                                                    if (charaFavor.Value.longSensitivityCounts[0] > 20) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                                    charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                                }
+                                                else
+                                                {
+                                                    charaWeights.Add(charaFavor.Key, 0);
+                                                    if (charaFavor.Value.longSensitivityCounts[0] > 20) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                                    charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                                }
+                                            }
+                                        }
+                                        
+                                        break;
+                                    default://Low and Lowest Virtue/Chastity
+                                        if (charaWeights.ContainsKey(charaFavor.Key))
+                                        {
+                                            charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[1];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        else
+                                        {
+                                            charaWeights.Add(charaFavor.Key, 0);
+                                            charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[1];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        break;
+                                }
+
+                            }
+                            else if (sexType == -1)
+                            {
+                                //if (isFuta && (thatCharacter.parameter.sex == 1 && !thatCharacter.parameter.isFutanari)) continue;
+                                switch (virtueLV)
+                                {
+                                    case 2://Normal Virtue/Chastity
+                                        if (charaWeights.ContainsKey(charaFavor.Key))
+                                        {
+                                            if (charaFavor.Value.longSensitivityCounts[0] > 10) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            if (charaFavor.Value.longSensitivityCounts[1] > 10) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[1];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        else
+                                        {
+                                            charaWeights.Add(charaFavor.Key, 0);
+                                            if (charaFavor.Value.longSensitivityCounts[0] > 10) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            if (charaFavor.Value.longSensitivityCounts[1] > 10) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[1];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        break;
+                                    case 3://High Virtue/Chastity
+                                        if (charaWeights.ContainsKey(charaFavor.Key))
+                                        {
+                                            if (charaFavor.Value.longSensitivityCounts[0] > 20) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        else
+                                        {
+                                            charaWeights.Add(charaFavor.Key, 0);
+                                            if (charaFavor.Value.longSensitivityCounts[0] > 20) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        break;
+                                    case 4://Highest Virtue/Chastity
+                                        if (_actor.charasGameParam.memory.pairTable.ContainsKey(charaFavor.Key))
+                                        {
+                                            if (_actor.charasGameParam.memory.pairTable[charaFavor.Key].TotalH > 0)
+                                            {
+                                                if (charaWeights.ContainsKey(charaFavor.Key))
+                                                {
+                                                    if (charaFavor.Value.longSensitivityCounts[0] > 20) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                                    charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                                }
+                                                else
+                                                {
+                                                    charaWeights.Add(charaFavor.Key, 0);
+                                                    if (charaFavor.Value.longSensitivityCounts[0] > 20) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                                    charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    default://Low and Lowest Virtue/Chastity
+                                        if (charaWeights.ContainsKey(charaFavor.Key))
+                                        {
+                                            charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[1];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        else
+                                        {
+                                            charaWeights.Add(charaFavor.Key, 0);
+                                            charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                            charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[1];
+                                            charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
+                                        }
+                                        break;
+                                }
+                            }
+                        }               
+                    }                  
+                }
+            }
+
+            if (charaWeights.Count > 0)
+            {
+                foreach (var weights in charaWeights)
+                {
+                    if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Candidate ID: {weights.Key} - Weight: {weights.Value}");
+                    if (weights.Value > 0) summedWeights += weights.Value;
+                }
+            }
+            
+            if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Calculating... sums of weights: {summedWeights}");
+            if (summedWeights > 0)
+            {
+                int pickChance = _rnd.Next(0, summedWeights);
+                int weight = 0;
+                foreach (var weights in charaWeights)
+                {
+                    if (weights.Value <= 0) continue;
+                    weight += weights.Value;
+                    if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Chances: {weight}/{pickChance}");
+                    if (weight > pickChance)
+                    {
+                        if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"3P Partner selected: {weights.Key}");
+                        _actor.charasGameParam.commandNo = 77;
+                        _actor.charasGameParam.thatPersonCharaArrayIndex = weights.Key;
+                        if (Game.Charas.TryGetValue(weights.Key, out Actor thatPersonActor))
+                        {
+                            _actor.charasGameParam.thatPersonName = thatPersonActor.Name;
+                        }
+                        return;
+                    }
+                }
+            }
+            if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"No partner for 3P found");
         }
     }
 }
