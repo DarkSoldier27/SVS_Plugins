@@ -1947,6 +1947,11 @@ namespace SVS_CustomGameBalance
             if (thinking._charaCtrl.ai == null) return;
             if (thinking._charaCtrl.ai._charaData == null) return;
             if (thinking._charaCtrl.ai._charaData.charasGameParam.commandNo == 77) return;
+            if (thinking._charaCtrl.ai.charaData.gameParameter.individuality.answer.Contains(29))
+            {
+                if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Character has Singleminded trait, can not ask for 3P");
+                return;
+            }
 
             if (thinking._charaCtrl.target.kind == BehaviourController.TargetInfo.TargetKind.Chara)
             {
@@ -1964,6 +1969,21 @@ namespace SVS_CustomGameBalance
                 int commandID = thinking._charaCtrl.AI._charaData.CommandNo;
 
                 if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Original commandNo: {commandID}");
+                
+                int askRate = 0;
+                if (Game.Charas.TryGetValue(targetID, out Actor targetActor))
+                {
+                    if (thinking._charaCtrl.ai._charaData.gameParameter.individuality.answer.Contains(2) && targetActor.parameter.sex == 0) askRate -= 10;
+                    if (thinking._charaCtrl.ai._charaData.gameParameter.individuality.answer.Contains(3) && targetActor.parameter.sex == 1) askRate -= 10;
+                }
+                if (thinking._charaCtrl.ai._charaData.gameParameter.individuality.answer.Contains(9)) askRate -= 5;
+                if (thinking._charaCtrl.ai._charaData.gameParameter.individuality.answer.Contains(10)) askRate -= 5;
+                if (thinking._charaCtrl.ai._charaData.gameParameter.individuality.answer.Contains(12)) askRate += 10;
+                if (thinking._charaCtrl.ai._charaData.gameParameter.individuality.answer.Contains(13)) askRate -= 5;
+                if (thinking._charaCtrl.ai._charaData.gameParameter.individuality.answer.Contains(14)) askRate -= 5;
+                if (thinking._charaCtrl.ai._charaData.gameParameter.individuality.answer.Contains(19)) askRate += 10;
+                if (thinking._charaCtrl.ai._charaData.gameParameter.individuality.answer.Contains(20)) askRate -= 5;
+                if (thinking._charaCtrl.ai._charaData.gameParameter.individuality.answer.Contains(34)) askRate += 5;
 
                 int chance = _rnd.Next(0, 100);
                 if (rate == 0)
@@ -1971,15 +1991,18 @@ namespace SVS_CustomGameBalance
                     switch (commandID)
                     {
                         case 35:
-                            if (chance < 35) askForThreeP = true;
+                            askRate += 35;
+                            if (chance < askRate) askForThreeP = true;
                             break;
                         case 37:
-                            if (chance < 15) askForThreeP = true;
+                            askRate += 15;
+                            if (chance < askRate) askForThreeP = true;
                             break;
                     }
                 }
                 else
-                {                  
+                {
+                    if (rate < 100) rate += askRate;
                     if (rate > chance)
                     {
                         askForThreeP = true;
@@ -2055,24 +2078,30 @@ namespace SVS_CustomGameBalance
                 {
                     if (!charaWeights.ContainsKey(lover.id) && lover.id != targetID)
                     {
-                        if (Game.Charas.TryGetValue(lover.id, out Actor pcCharacter))
+                        if (Game.Charas.TryGetValue(lover.id, out Actor ThirdCharacter))
                         {
-                            if (!pcCharacter.IsPC) charaWeights.Add(lover.id, 30);
+                            if (!ThirdCharacter.IsPC)
+                            {
+                                if (!ThirdCharacter.gameParameter.individuality.answer.Contains(29)) charaWeights.Add(lover.id, 30);
+                            }
                         }
                     }
                 }
             }
 
-            //Check if it has the same lover
+            //Check if 2nd character has the same lover
             if (targetActor.charasGameParam.memory.lovers.Count > 0)
             {
                 foreach (var lover in targetActor.charasGameParam.memory.lovers)
                 {
                     if (charaWeights.ContainsKey(lover.id))
                     {
-                        if (Game.Charas.TryGetValue(lover.id, out Actor pcCharacter))
+                        if (Game.Charas.TryGetValue(lover.id, out Actor ThirdCharacter))
                         {
-                            if (!pcCharacter.IsPC) charaWeights[lover.id] += 20;
+                            if (!ThirdCharacter.IsPC)
+                            {
+                                if (!ThirdCharacter.gameParameter.individuality.answer.Contains(29)) charaWeights[lover.id] += 20;
+                            }
                         }
                     } 
                 }
@@ -2085,10 +2114,15 @@ namespace SVS_CustomGameBalance
                 {
                     if (Game.Charas.TryGetValue(charaFavor.Key, out Actor thatCharacter))
                     {
+                        //Checks that the 3rd character ID is not the same as the 2nd character ID and...
+                        //If the 3rd character is PC, skip!. The game doesn't have an ADV for this situation, therefor it cause a soft locks if the 3rd character is PC
                         if (thatCharacter.charasGameParam.Index != targetID && !thatCharacter.IsPC)
                         {
+                            //If 3rd character has Singleminded trait, skip!
+                            if (thatCharacter.gameParameter.individuality.answer.Contains(29)) continue;
                             if (thatCharacter.parameter.sex == sexType && sexType != -1)
                             {
+                                //Add chara weight base on virtue lv
                                 switch (virtueLV)
                                 {
                                     case 2://Normal Virtue/Chastity
@@ -2155,7 +2189,6 @@ namespace SVS_CustomGameBalance
                                         }
                                         break;
                                 }
-
                             }
                             else if (sexType == -1)
                             {
@@ -2226,7 +2259,12 @@ namespace SVS_CustomGameBalance
                                         break;
                                 }
                             }
-                        }               
+                            if (charaWeights.ContainsKey(charaFavor.Key))
+                            {
+                                if (_actor.gameParameter.individuality.answer.Contains(2) && thatCharacter.parameter.sex == 0) charaWeights[charaFavor.Key] -= 20;
+                                if (_actor.gameParameter.individuality.answer.Contains(3) && thatCharacter.parameter.sex == 1) charaWeights[charaFavor.Key] -= 20;
+                            }
+                        }
                     }                  
                 }
             }
