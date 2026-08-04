@@ -2083,19 +2083,21 @@ namespace SVS_CustomGameBalance
                     {
                         if (Game.Charas.TryGetValue(lover.id, out Actor ThirdCharacter))
                         {
-                            if (ThirdCharacter.charaBase == null) continue;
-                            if (chara.parameter.sex == 1 && targetActor.parameter.sex == 1 && ThirdCharacter.parameter.sex == 1) continue;
-                            if (chara.parameter.sex == 0 && targetActor.parameter.sex == 0 && ThirdCharacter.parameter.sex == 0) continue;
-                            if (!ThirdCharacter.IsPC)
+                            if (ThirdCharacter.charaBase != null)
                             {
-                                if (!ThirdCharacter.gameParameter.individuality.answer.Contains(29)) charaWeights.Add(lover.id, 30);
-                            }
+                                if (chara.parameter.sex == 1 && targetActor.parameter.sex == 1 && ThirdCharacter.parameter.sex == 1) continue;
+                                if (chara.parameter.sex == 0 && targetActor.parameter.sex == 0 && ThirdCharacter.parameter.sex == 0) continue;
+                                if (!ThirdCharacter.IsPC)
+                                {
+                                    if (!ThirdCharacter.gameParameter.individuality.answer.Contains(29)) charaWeights.Add(lover.id, 30);
+                                }
+                            }                   
                         }
                     }
                 }
             }
 
-            //Check if it has the same lover
+            //Check if they have the same lover
             if (targetActor.charasGameParam.memory.lovers.Count > 0)
             {
                 foreach (var lover in targetActor.charasGameParam.memory.lovers)
@@ -2104,13 +2106,15 @@ namespace SVS_CustomGameBalance
                     {
                         if (Game.Charas.TryGetValue(lover.id, out Actor ThirdCharacter))
                         {
-                            if (ThirdCharacter.charaBase == null) continue;
-                            if (chara.parameter.sex == 1 && targetActor.parameter.sex == 1 && ThirdCharacter.parameter.sex == 1) continue;
-                            if (chara.parameter.sex == 0 && targetActor.parameter.sex == 0 && ThirdCharacter.parameter.sex == 0) continue;
-                            if (!ThirdCharacter.IsPC)
+                            if (ThirdCharacter.charaBase != null)
                             {
-                                if (!ThirdCharacter.gameParameter.individuality.answer.Contains(29)) charaWeights[lover.id] += 20;
-                            }
+                                if (chara.parameter.sex == 1 && targetActor.parameter.sex == 1 && ThirdCharacter.parameter.sex == 1) continue;
+                                if (chara.parameter.sex == 0 && targetActor.parameter.sex == 0 && ThirdCharacter.parameter.sex == 0) continue;
+                                if (!ThirdCharacter.IsPC)
+                                {
+                                    if (!ThirdCharacter.gameParameter.individuality.answer.Contains(29)) charaWeights[lover.id] += 20;
+                                }
+                            }                        
                         }
                     } 
                 }
@@ -2123,8 +2127,7 @@ namespace SVS_CustomGameBalance
                 {
                     if (Game.Charas.TryGetValue(charaFavor.Key, out Actor thatCharacter))
                     {
-                        if (thatCharacter.charaBase == null) continue;
-                        if (thatCharacter.charasGameParam.Index != targetID && !thatCharacter.IsPC)
+                        if (thatCharacter.charasGameParam.Index != targetID && !thatCharacter.IsPC && thatCharacter.charaBase != null)
                         {
                             if (thatCharacter.gameParameter.individuality.answer.Contains(29)) continue;
                             if (thatCharacter.parameter.sex == sexType && sexType != -1)
@@ -2166,13 +2169,13 @@ namespace SVS_CustomGameBalance
                                             {
                                                 if (charaWeights.ContainsKey(charaFavor.Key))
                                                 {
-                                                    if (charaFavor.Value.longSensitivityCounts[0] > 20) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                                    if (charaFavor.Value.longSensitivityCounts[0] > 25) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
                                                     charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
                                                 }
                                                 else
                                                 {
                                                     charaWeights.Add(charaFavor.Key, 0);
-                                                    if (charaFavor.Value.longSensitivityCounts[0] > 20) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
+                                                    if (charaFavor.Value.longSensitivityCounts[0] > 25) charaWeights[charaFavor.Key] += charaFavor.Value.longSensitivityCounts[0];
                                                     charaWeights[charaFavor.Key] -= charaFavor.Value.longSensitivityCounts[3];
                                                 }
                                             }
@@ -2322,8 +2325,7 @@ namespace SVS_CustomGameBalance
                             {
                                 if (MapManager.Instance.MapListTable[thatChara.charaBase.BehaviourCtrl.nowMapID].Kind == 1) 
                                 {
-                                    if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"3P Target is on a Private Room");
-                                    chara.charasGameParam.commandNo = 39;
+                                    if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"3P Target is on a Private Room");                                        
                                 }
                             }
                             else chara.charasGameParam.commandNo = 39;
@@ -2404,6 +2406,7 @@ namespace SVS_CustomGameBalance
 
             if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"CharaID: {chara.charasGameParam.Index} - Virtue LV: {virtue}");
 
+            //Conditions base on Virtue/Chastity Lv
             switch (virtue)
             {
                 case 0:
