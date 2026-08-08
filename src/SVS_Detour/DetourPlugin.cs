@@ -21,7 +21,7 @@ namespace SVS_Detour
         {
             //Logging
             Log = base.Log;
-            _showLog = Config.Bind("options", "Show Log", true, new ConfigDescription("Show log", null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 20 }));
+            _showLog = Config.Bind("options", "Show Log", false, new ConfigDescription("Show log", null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 20 }));
 
             NightEventJudgeHook.Install();
             Log.LogInfo("Patched NightEventManager");
