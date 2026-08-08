@@ -1,4 +1,4 @@
-﻿using BepInEx.Unity.IL2CPP.Hook;
+using BepInEx.Unity.IL2CPP.Hook;
 using HarmonyLib;
 using Il2CppInterop.Common;
 using Il2CppInterop.Runtime.InteropTypes;
@@ -22,6 +22,7 @@ namespace SVS_Detour
         private static int _charaID = -1;
         private static int _nightType = 0;
         private static float _nightWeight = 0;
+        private static bool _disableEvent = false;
 
         public static void Install()
         {
@@ -128,6 +129,11 @@ namespace SVS_Detour
                         weight = 0;
                     }
                         
+                }
+                else
+                {
+                    resultId = 0;
+                    weight = 0;
                 }
 
                 if (resultId == 0) weight = 0f;
