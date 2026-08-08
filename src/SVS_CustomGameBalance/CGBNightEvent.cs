@@ -110,8 +110,8 @@ namespace SVS_CustomGameBalance
                                 }
                                 break;
                         }
-
-                        if (!_nightVisitCandidates.ContainsKey(charaNPC.Key)) _nightVisitCandidates.Add(charaNPC.Key, [0, 0]);
+                        //Males don't have ADV, they won't visit until this is fixed.
+                        if (!_nightVisitCandidates.ContainsKey(charaNPC.Key) && charaNPC.Value.parameter.sex == 1) _nightVisitCandidates.Add(charaNPC.Key, [0, 0]);
 
                         if (friendPoints > 10)
                         {
