@@ -9,4 +9,8 @@
 	<ItemGroup>
 		<EmbeddedResource Include="Resources\btn_switch.png" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\SVS_Detour\SVS_Detour.csproj" />
+	</ItemGroup>
 </Project>
