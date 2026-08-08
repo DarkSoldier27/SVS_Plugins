@@ -20,6 +20,7 @@ using UnityEngine;
 namespace SVS_CustomGameBalance
 {
     [BepInPlugin(GUID, DisplayName, Version)]
+    [BepInDependency("SVS.Detour", BepInDependency.DependencyFlags.SoftDependency)]
     public class CustomGameBalancePlugin : BasePlugin
     {
         public const string DisplayName = Constants.Name;
@@ -29,9 +30,9 @@ namespace SVS_CustomGameBalance
         internal static new ManualLogSource Log;
         private static Harmony patchedHooks;
 
-        internal static ConfigEntry<KeyCode> _toggleKey_AutoPC { get; set; }
-        internal static ConfigEntry<KeyCode> _toggleKey_SwitchPCCharacter { get; set; }
-        internal static ConfigEntry<KeyCode> _toggleKey_AutoCharaVoice { get; set; }
+        internal static ConfigEntry<KeyCode> toggleKey_AutoPC { get; set; }
+        internal static ConfigEntry<KeyCode> toggleKey_SwitchPCCharacter { get; set; }
+        internal static ConfigEntry<KeyCode> toggleKey_AutoCharaVoice { get; set; }
 
         private static ConfigEntry<AllowHugging> _allowHugSkinship;
         private static ConfigEntry<CharaType> _interruptPCNPC;
@@ -57,11 +58,14 @@ namespace SVS_CustomGameBalance
         private static ConfigEntry<bool> _removeActionLimit;
         //private static ConfigEntry<bool> _escapeVoiceFix;
         private static ConfigEntry<bool> _fortuneSuccessFix;
-        //private static ConfigEntry<bool> increaseNightEvent;
+        private static ConfigEntry<bool> _increaseNightEvent;
         //private static ConfigEntry<bool> forceNightEvent;
-        private static ConfigEntry<bool> forceBreakUp;
+        private static ConfigEntry<bool> _forceBreakUp;
         //private static ConfigEntry<bool> hugLovePointsSwitch;
-        private static ConfigEntry<bool> _enableNPC3PAsk;
+        private static ConfigEntry<bool> _enablePC_3PJoin;
+        private static ConfigEntry<bool> _enableNPC_3PAsk;
+        private static ConfigEntry<bool> _enableNPC_3PJoin;
+
         private static ConfigEntry<bool> _showLog;
         private static ConfigEntry<bool> _enable_NormalVirtueBalance;
         private static ConfigEntry<bool> _disableKidnapping;
@@ -79,11 +83,12 @@ namespace SVS_CustomGameBalance
         //private static ConfigEntry<int> _h2ReactionChance;
         //private static ConfigEntry<int> _h3ReactionChance;
         private static ConfigEntry<int> _NPC_3PAskRate;
+        private static ConfigEntry<int> _NPC_3PJoinRate;
         private static ConfigEntry<int> _NPCSexTimerMin;
         private static ConfigEntry<int> _NPCSexTimerMax;
         //private static ConfigEntry<int> _actionLimit;
-        private static ConfigEntry<int> nightChance;
-        private static ConfigEntry<int> nightChanceH;
+        private static ConfigEntry<int> _nightChance;
+        private static ConfigEntry<int> _nightChanceH;
 
         private static ConfigEntry<float> _pcRunSpeed;
         private static ConfigEntry<float> _pcWalkSpeed;
@@ -99,7 +104,6 @@ namespace SVS_CustomGameBalance
         {
             //Plugin startup logic
             Log = base.Log;
-
             //Stats Reduction
             _enableStatsReduction = Config.Bind("Stats Reduction", "Enable Stats Reduction for Characters", true, new ConfigDescription("The characters will lose some points on their Stamina, Study, LifeStyle and Talk stats at the end of the day, the amount of point they lose will depend on what was set on the abilities tab in the Character Maker", null, new ConfigurationManagerAttributes { Order = 3 }));
             _disablePCReduction = Config.Bind("Stats Reduction", "Disable PC stats reduction", true, new ConfigDescription("Disable the stats getting reduced for the Playable Character. By default this option is Enable, which means the Playable Character won't get his/her stats reduce at the end of the day", null, new ConfigurationManagerAttributes { Order = 2 }));
@@ -107,37 +111,40 @@ namespace SVS_CustomGameBalance
             _pointAditive = Config.Bind("Stats Reduction", "Set multiplier", 15, new ConfigDescription("Set the multiplier for the base value, 10 is equal to 1.1, 50 is equal to 1.5, 100 is equal to 2. Depending of the character stat Level is how much the multiplier affect that stat (Lowest is x4, Low is x3, Normal x2, High x1 and Highest is unaffected by the multiplier)", new AcceptableValueRange<int>(10, 100), new ConfigurationManagerAttributes { Order = 0 }));
 
             //Interruption Manager / Reaction Manager
-            _enableReactionManager = Config.Bind("Interruption Manager", "Enable Interruption Manager", true, new ConfigDescription("If enabled, it will use the sliders below to determined the probability of interruptions from NPCs", null, new ConfigurationManagerAttributes { Order = 12 }));
+            _enableReactionManager = Config.Bind("Interruption Manager", "Enable Interruption Manager", true, new ConfigDescription("If enabled, it will use the sliders below to determined the probability of interruptions from NPCs", null, new ConfigurationManagerAttributes { Order = 15 }));
             _interruptPCNPC = Config.Bind("Interruption Manager", "Reduce Interruptions for", CharaType.PC | CharaType.NPC,
-            new ConfigDescription("Set if the reduced interruption rate affect PC, NPC or both", null, new ConfigurationManagerAttributes { Order = 11 }));
+            new ConfigDescription("Set if the reduced interruption rate affect PC, NPC or both", null, new ConfigurationManagerAttributes { Order = 14 }));
 
-            _reactionChanceOverall = Config.Bind("Interruption Manager", "Reduce All Interruptions Rate by %", 0, new ConfigDescription("Reduce the chances for all types of Interruptions by the chosen amount.", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 10 }));
-            _reactionChanceNormal = Config.Bind("Interruption Manager", "Reduce Normal Interruptions by %", 0, new ConfigDescription("Reduce the chances for Normal Interruptions by the chosen amount.", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 9 }));
-            _reactionChanceSkinship = Config.Bind("Interruption Manager", "Reduce Contact Interruptions by %", 0, new ConfigDescription("Reduce the chances for Contact (Hug, Kiss, Touch) Interruptions by the chosen amount.", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 8 }));
-            _reactionChanceH = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by %", 0, new ConfigDescription("Reduce the chances of public sex Interruptions by the chosen amount. Doesn't affect NPCs asking for 3P", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 7 }));
-            //_masturbationReactionChance = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by", 0, new ConfigDescription("Reduce the chance for all types of Interruptions", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 6 }));
-            //_fightReactionChance = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by", 0, new ConfigDescription("Reduce the chance for all types of Interruptions", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 5 }));
-            //_losingReactionChance = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by", 0, new ConfigDescription("Reduce the chance for all types of Interruptions", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 2 }));
-            //_h2ReactionChance = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by", 0, new ConfigDescription("Reduce the chance for all types of Interruptions", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 1 }));
-            //_h3ReactionChance = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by", 0, new ConfigDescription("Reduce the chance for all types of Interruptions", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 0 }));
+            _reactionChanceOverall = Config.Bind("Interruption Manager", "Reduce All Interruptions Rate by %", 0, new ConfigDescription("Reduce the chances for all types of Interruptions by the chosen amount.", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 13 }));
+            _reactionChanceNormal = Config.Bind("Interruption Manager", "Reduce Normal Interruptions by %", 0, new ConfigDescription("Reduce the chances for Normal Interruptions by the chosen amount.", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 12 }));
+            _reactionChanceSkinship = Config.Bind("Interruption Manager", "Reduce Contact Interruptions by %", 0, new ConfigDescription("Reduce the chances for Contact (Hug, Kiss, Touch) Interruptions by the chosen amount.", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 11 }));
+            _reactionChanceH = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by %", 0, new ConfigDescription("Reduce the chances of public sex Interruptions by the chosen amount. Doesn't affect NPCs asking for 3P", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 10 }));
+            //_masturbationReactionChance = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by", 0, new ConfigDescription("Reduce the chance for all types of Interruptions", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 9 }));
+            //_fightReactionChance = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by", 0, new ConfigDescription("Reduce the chance for all types of Interruptions", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 8 }));
+            //_losingReactionChance = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by", 0, new ConfigDescription("Reduce the chance for all types of Interruptions", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 7 }));
+            //_h2ReactionChance = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by", 0, new ConfigDescription("Reduce the chance for all types of Interruptions", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 6 }));
+            //_h3ReactionChance = Config.Bind("Interruption Manager", "Reduce public sex Interruptions by", 0, new ConfigDescription("Reduce the chance for all types of Interruptions", new AcceptableValueRange<int>(0, 99), new ConfigurationManagerAttributes { Order = 5 }));
+            _enablePC_3PJoin = Config.Bind("Interruption Manager", "PC 3P Interruption", true, new ConfigDescription("If enabled, PC will be able to join 3P more easily", null, new ConfigurationManagerAttributes { Order = 4 }));
+            _enableNPC_3PJoin = Config.Bind("Interruption Manager", "NPC 3P Interruption", true, new ConfigDescription("If enabled, NPCs will be able to join 3P more frequently. The chance of success will be affected by Trait, Sexual Orientation and Virtue level", null, new ConfigurationManagerAttributes { Order = 3 }));
+            _NPC_3PJoinRate = Config.Bind("Interruption Manager", "NPC 3P Interruption Rate", 0, new ConfigDescription("Rate of how often NPCs will join 3P when they see public sex. \nVirtue and trait will affect this \nAt 100 they will always join for 3P if conditions are met", new AcceptableValueRange<int>(0, 100), new ConfigurationManagerAttributes { Order = 2 }));
 
             //Night Event
-            //increaseNightEvent = Config.Bind("Night Event", "Increase Night Event Rate", true, new ConfigDescription("If enabled, the rate of the Night event will be increase. Note: Male characters can not visit you if you play as a female or male character (Illgames did not add events for them)", null, new ConfigurationManagerAttributes { Order = 10 }));
-            //nightChance = Config.Bind("Night Event", "Normal Night Event Rate", 70, new ConfigDescription("Increase the rate of Normal Night Events. NOTE: The game still has a small chance of not triggering the event, so a value of 100 does not mean the event will always trigger", new AcceptableValueRange<int>(0, 100), new ConfigurationManagerAttributes { Order = 9 }));
-            //nightChanceH = Config.Bind("Night Event", "Sex Night Event Rate", 70, new ConfigDescription("Increase the rate of Sex Night Events. NOTE: The game still has a small chance of not triggering the event, so a value of 100 does not mean the event will always trigger", new AcceptableValueRange<int>(0, 100), new ConfigurationManagerAttributes { Order = 8 }));
+            if (GetDetourPlugin(true)) _increaseNightEvent = Config.Bind("Night Event", "Increase Night Event Rate", true, new ConfigDescription("If enabled, the rate of the Night event will be increase. Note: Male characters can not visit you if you play as a female or male character (Illgames did not add events for them)", null, new ConfigurationManagerAttributes { Order = 10 }));
+            if (GetDetourPlugin(false)) _nightChance = Config.Bind("Night Event", "Normal Night Event Rate", 50, new ConfigDescription("Increase the rate of Normal Night Events.", new AcceptableValueRange<int>(0, 100), new ConfigurationManagerAttributes { Order = 9 }));
+            if (GetDetourPlugin(false)) _nightChanceH = Config.Bind("Night Event", "Sex Night Event Rate", 50, new ConfigDescription("Increase the rate of Sex Night Events.", new AcceptableValueRange<int>(0, 100), new ConfigurationManagerAttributes { Order = 8 }));
 
             //Action Manager
             _actionPorcentageDisplay = Config.Bind("Action Manager", "Display Probability", DisplayPercentage.Normal,
             new ConfigDescription("Normal: Display percentage values as normal | Real: Display the real percentage value | Hide: Hide the percentage value", null, new ConfigurationManagerAttributes { Order = 9 }));
             _removeActionLimit = Config.Bind("Action Manager", "Remove Action Limit", true, new ConfigDescription("If enabled, the 3 action limit per period will be removed", null, new ConfigurationManagerAttributes { Order = 8 }));
-            forceBreakUp = Config.Bind("Action Manager", "Easy Break Ups", false, new ConfigDescription("If enabled, the break up action is always at 100 percent for both PC and NPCs (Only for lovers of course)", null, new ConfigurationManagerAttributes { Order = 7 }));
-            _enableNPC3PAsk = Config.Bind("Action Manager", "NPC ask for 3P", true, new ConfigDescription("If enabled, NPCs will be able to ask for 3P more frequently (The rate will be affected by Traits and Virtue level)", null, new ConfigurationManagerAttributes { Order = 6 }));
-            _NPC_3PAskRate = Config.Bind("Action Manager", "NPC ask for 3P Rate", 0, new ConfigDescription("Rate of how often the NPCs will ask for 3P. \nAt 0, NPCs will have a small chance of asking for 3P whenever they try to do public or private H.\nValues between 1 and 99, will be the chance of a NPC asking for 3P whenever they try to do an action. \nAt 100 they will always ask for 3P.", new AcceptableValueRange<int>(0, 100), new ConfigurationManagerAttributes { Order = 5 }));
+            _forceBreakUp = Config.Bind("Action Manager", "Easy Break Ups", false, new ConfigDescription("If enabled, the break up action is always at 100 percent for both PC and NPCs (Only for lovers of course)", null, new ConfigurationManagerAttributes { Order = 7 }));
+            _enableNPC_3PAsk = Config.Bind("Action Manager", "NPC ask for 3P", true, new ConfigDescription("If enabled, NPCs will be able to ask for 3P more frequently (The rate will be affected by Traits and Virtue level)", null, new ConfigurationManagerAttributes { Order = 6 }));
+            _NPC_3PAskRate = Config.Bind("Action Manager", "NPC ask for 3P Rate", 0, new ConfigDescription("Rate of how often the NPCs will ask for 3P. \nAt 0, NPCs will have a small chance of asking for 3P whenever they try to do public or private H.\nValues between 1 and 99, will be the chance of a NPC asking for 3P whenever they try to do an action.\nAt 100 they will always try to ask for 3P.", new AcceptableValueRange<int>(0, 100), new ConfigurationManagerAttributes { Order = 5 }));
 
             //Simulation
-            _toggleKey_AutoPC = Config.Bind("Simulation", "Toggle Auto PC", KeyCode.Y, new ConfigDescription("Hotkey to Toggle Auto PC | Auto PC means that your character will act like a NPC. It will take a little bit of time before the character starts to move", null, new ConfigurationManagerAttributes { Order = 13 }));
-            _toggleKey_SwitchPCCharacter = Config.Bind("Simulation", "Switch PC Character", KeyCode.U, new ConfigDescription("Hotkey to Switch PC Character | You can Change your character (PC) to any other character present on the map (You can only switch with NPCs that have the blue circle)", null, new ConfigurationManagerAttributes { Order = 12 }));
-            _toggleKey_AutoCharaVoice = Config.Bind("Simulation", "Auto PC Voice", KeyCode.O, new ConfigDescription("Hotkey to play a voice line during Auto PC. It does not do anything else", null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 11 }));
+            toggleKey_AutoPC = Config.Bind("Simulation", "Toggle Auto PC", KeyCode.Y, new ConfigDescription("Hotkey to Toggle Auto PC | Auto PC means that your character will act like a NPC. It will take a little bit of time before the character starts to move", null, new ConfigurationManagerAttributes { Order = 13 }));
+            toggleKey_SwitchPCCharacter = Config.Bind("Simulation", "Switch PC Character", KeyCode.U, new ConfigDescription("Hotkey to Switch PC Character | You can Change your character (PC) to any other character present on the map (You can only switch with NPCs that have the blue circle)", null, new ConfigurationManagerAttributes { Order = 12 }));
+            toggleKey_AutoCharaVoice = Config.Bind("Simulation", "Auto PC Voice", KeyCode.O, new ConfigDescription("Hotkey to play a voice line during Auto PC. It does not do anything else", null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 11 }));
 
             _allowHugSkinship = Config.Bind("Simulation", "Hugging does not cause cheating for", AllowHugging.None,
             new ConfigDescription("Set how Hug works in game. None: Hugging works as normal | All Characters: Hugging no longer triggers the Cheating Status | Exclude Some Traits: Hugging triggers Cheating only for some traits (Jealous and Evil) | Lowest Virtue Only: Hugging does not trigger the Cheating Status for Lowest Virtue Characters", null, new ConfigurationManagerAttributes { Order = 10 }));
@@ -188,9 +195,21 @@ namespace SVS_CustomGameBalance
             _forceHAction = Config.Bind("Cheats", "Force Only H Action", false, new ConfigDescription("Force NPC to only ask for Sex (Results may vary) WARNING: this affect all NPCs regardless of virtue, traits, sex, etc", null, new ConfigurationManagerAttributes { Order = 8 }));
             //forceNightEvent = Config.Bind("Cheats", "Force H Night Event", false, new ConfigDescription("If enabled, the lewd night event will be trigger", null, new ConfigurationManagerAttributes { Order = 7 }));
 
-            //CGBNightEvent.NightEventJudgeHook.Install();
             patchedHooks = Harmony.CreateAndPatchAll(typeof(Hooks));
         }
+        public static bool GetDetourPlugin(bool showWarning)
+        {
+            if (IL2CPPChainloader.Instance.Plugins.TryGetValue("SVS.Detour", out var moreOutfits))
+            {
+                return true;
+            }
+            else
+            {
+                if (showWarning) Log.Log(LogLevel.Message, "SVS_CustomGameBalance missing dependency: SVS_Detour. Disabling Night Event options");
+                return false;
+            }
+        }
+
         public override bool Unload()
         {
             patchedHooks?.UnpatchSelf();
@@ -219,21 +238,18 @@ namespace SVS_CustomGameBalance
             Duration = 1 << 0,
             //Speed = 1 << 1,
         }
-
         public enum HighVirtueBBQ
         {
             Normal = 0,
             Accept = 1,
             DoNotAsk = 2,
         }
-
         public enum DisplayPercentage
         {
             Normal = 0,
             Real = 1,
             Hide = 2,
         }
-
         public static bool[] GetGameFixes()
         {
             bool[] fixes = [_applyGameFixes.Value,
@@ -241,7 +257,6 @@ namespace SVS_CustomGameBalance
                             _applyAreYouDatingFix.Value];
             return fixes;
         }
-
         public static bool[] GetActionLowestRateEnable()
         {
             bool[] lowesRate = [
@@ -251,49 +266,40 @@ namespace SVS_CustomGameBalance
                 ];
             return lowesRate;
         }
-
         public static bool[] GetForceActions()
         {
-            bool[] forceActions = [forceBreakUp.Value];
+            bool[] forceActions = [_forceBreakUp.Value];
 
             return forceActions;
         }
-
         public static float GetNewRate()
         {
             return _lowestActionRate.Value;
         }
-
         public static bool GetFortuneFix()
         {
             return _fortuneSuccessFix.Value;
         }
-
         public static HighVirtueBBQ GetHighVirtueBBQ()
         {
             return _bbqAnswerType.Value;
         }
-
         public static int[] GetNightChance()
         {
-            return [nightChance.Value, nightChanceH.Value];
+            return [_nightChance.Value, _nightChanceH.Value];
         }
-
         public static bool GetShowLog()
         {
             return _showLog.Value;
         }
-
         public static bool GetNormalVirtueBalance()
         {
             return _enable_NormalVirtueBalance.Value;
         }
-        
         public static bool GetKidnapOption()
         {
             return _disableKidnapping.Value;
         }
-        
         internal static class Hooks
         {
             private static readonly Dictionary<int, GlobalListLoad.MoveAnimationPitch> npcSpeedDic = new();
@@ -313,8 +319,8 @@ namespace SVS_CustomGameBalance
                         npcSpeedDic.Add(npc.Key, move);
                     }
                 }
-                CustomGameBalance.GetNightRateList();
             }
+
             [HarmonyPostfix]
             [HarmonyPatch(typeof(SimulationScene), nameof(SimulationScene.Start))]
             public static void SimStart(SimulationScene __instance)
@@ -326,13 +332,13 @@ namespace SVS_CustomGameBalance
             [HarmonyPatch(typeof(SimulationScene), nameof(SimulationScene.Update))]
             public static void DectectKeyDown(SimulationScene __instance)
             {
-                if (Input.GetKeyDown(_toggleKey_AutoPC.Value))
+                if (Input.GetKeyDown(toggleKey_AutoPC.Value))
                 {
                     CustomGameBalance.SetAutoPC();
                     return;
                 }
 
-                if (Input.GetKeyDown(_toggleKey_AutoCharaVoice.Value))
+                if (Input.GetKeyDown(toggleKey_AutoCharaVoice.Value))
                 {
                     if (GameChara.PlayerAI != null)
                     {
@@ -341,7 +347,7 @@ namespace SVS_CustomGameBalance
                     return;
                 }
 
-                if (Input.GetKeyDown(_toggleKey_SwitchPCCharacter.Value))
+                if (Input.GetKeyDown(toggleKey_SwitchPCCharacter.Value))
                 {
                     CGBSwitchCharacter.SwitchPCCharacter();
                     return;
@@ -452,7 +458,7 @@ namespace SVS_CustomGameBalance
 
             [HarmonyPostfix]
             [HarmonyPatch(typeof(ADVManager), nameof(ADVManager.Set3PFlag))]
-            public static void Force3P(ADVManager __instance, Actor actor, Actor actor1, Actor actor2)
+            public static void ShowJoin3POptionADV(ADVManager __instance, Actor actor, Actor actor1, Actor actor2)
             {
                 if (_forceThreesome.Value)
                 {
@@ -464,8 +470,10 @@ namespace SVS_CustomGameBalance
                     }
                     __instance._packData.Is3P = true;
                 }
+                else if (_enablePC_3PJoin.Value) __instance._packData.Is3P = CustomGameBalance.CanJoinThreesome(actor, actor1, actor2, true, 0);
             }
 
+            [HarmonyPriority(800)]
             [HarmonyPostfix]
             [HarmonyPatch(typeof(SVThinking), nameof(SVThinking.OnUpdate))]
             public static void ActionOverride(SVThinking __instance)
@@ -473,14 +481,14 @@ namespace SVS_CustomGameBalance
                 if (_forceHAction.Value)
                 {
                     if (!__instance._charaCtrl.AI.charaData.IsPC)
-                    {         
+                    {
                         __instance._charaCtrl.AI.charaData.CommandNo = 35;
                     }
                 }
-                else if (_enableNPC3PAsk.Value)
+                else if (_enableNPC_3PAsk.Value)
                 {
                     if (__instance.CharaCtrl.AI.charaData.IsPC) return;
-                    CustomGameBalance.ThreeP_NPCAskCondition(__instance, _NPC_3PAskRate.Value);
+                    CustomGameBalance.ThreesomeNPCAskCondition(__instance, _NPC_3PAskRate.Value);
                 }
             }
 
@@ -504,6 +512,19 @@ namespace SVS_CustomGameBalance
                             }
                         }
                         return 4;
+                    }
+                }
+                else if (_enableNPC_3PJoin.Value)
+                {
+                    if (no == 1)
+                    {
+                        if (_ai != null && _ai1 != null && _ai2 != null)
+                        {
+                            if (_ai.charaData != null && _ai1.charaData != null && _ai2.charaData != null)
+                            {
+                                if (CustomGameBalance.CanJoinThreesome(_ai.charaData, _ai1.charaData, _ai2.charaData, false, _NPC_3PJoinRate.Value)) return 4;
+                            }
+                        }
                     }
                 }
 
@@ -554,9 +575,13 @@ namespace SVS_CustomGameBalance
             [HarmonyPriority(300)]
             [HarmonyPostfix]
             [HarmonyPatch(typeof(BaseAnswer), nameof(BaseAnswer.Judge))]
-            public static void ActionAnswerRate(BaseAnswer __instance, bool __result, YesNoJudgeManager.AnswerInfo _ansInfo, YesNoJudgeManager.YesNoInfo _ynInfo, int _commandID, int _questionCount, Il2CppStructArray<bool> _calcs)
+            public static void ActionAnswerRate(bool __result, YesNoJudgeManager.AnswerInfo _ansInfo, YesNoJudgeManager.YesNoInfo _ynInfo, int _commandID, int _questionCount, Il2CppStructArray<bool> _calcs)
             {
-                CustomGameBalance.NewAnswerRate(_ansInfo, _ynInfo, _commandID, _questionCount);
+                if (__result)
+                {
+                    if (GetShowLog()) Log.LogInfo($"BaseAnswer.Judge: {__result} - Command: {_commandID} - For Chara ID: {_ynInfo.passive.charasGameParam.Index}");
+                    CustomGameBalance.NewAnswerRate(_ansInfo, _ynInfo, _commandID, _questionCount);
+                }
             }
 
             private static AI _npc;
@@ -685,7 +710,7 @@ namespace SVS_CustomGameBalance
                 if (_removeActionLimit.Value) return false;
                 return true;
             }
-            
+
             [HarmonyPriority(300)]
             [HarmonyPostfix]
             [HarmonyPatch(typeof(SuccessJudgeManager), nameof(SuccessJudgeManager.Judge))]
@@ -693,6 +718,16 @@ namespace SVS_CustomGameBalance
             {
                 __result = CustomGameBalance.NewSuccessValue(__result);
                 return __result;
+            }
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(SimulationButtonAction), nameof(SimulationButtonAction.ShiftFromSimNightToRoomMorning))]
+            public static void NightCharactersPool(SimulationButtonAction __instance)
+            {
+                if (GetDetourPlugin(false))
+                {
+                    if (_increaseNightEvent.Value) CGBNightEvent.GetNightEventCharacters();
+                }
             }
         }
     }
