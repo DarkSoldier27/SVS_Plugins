@@ -14,10 +14,6 @@ namespace SVS_CustomGameBalance
     {
         private static readonly Random _rnd = new();
 
-        private static readonly Dictionary<int, AnswerBaseDataParam> nightTable = new();
-        private static readonly System.Collections.Generic.List<AI> charas = new();
-        private static AI selectedAI = new();
-
         private static bool _isPCDisable;
         //private static bool _onPeriodEnd = false;
 
@@ -27,8 +23,7 @@ namespace SVS_CustomGameBalance
         private static int _Study;
         //private static int _JobPoint = 0;
         private static int _tempValue;
-        private static int nightType = -1;
-        private static int selectedCharaID = -1;
+
         private static float _aditiveMod = 1f;
         public static void SetAutoPC()
         {
@@ -787,293 +782,7 @@ namespace SVS_CustomGameBalance
                 }
             }
             
-        }
-        /*public static YesNoJudgeManager.AnswerInfo NewAnswerRateOld(YesNoJudgeManager.AnswerInfo _oldAnswerInfo, YesNoJudgeManager.YesNoInfo yesNoInfo, int _commandID, int _questionCount)
-        {
-            var isGameFixes = CustomGameBalancePlugin.GetGameFixes();
-            var isNewLowestRate = CustomGameBalancePlugin.GetActionLowestRateEnable();
-            var isForceActions = CustomGameBalancePlugin.GetForceActions();
-
-            if (yesNoInfo.active == null && yesNoInfo.passive == null) return _oldAnswerInfo;
-
-
-            if (!isGameFixes[0] && !isNewLowestRate[0]) return _oldAnswerInfo;
-
-            if (isGameFixes[0])
-            {
-                int askingCharaID = yesNoInfo.active.charasGameParam.Index;
-
-                switch (_commandID)
-                {
-                    case 28:
-                        if (!isGameFixes[1]) break;
-                        if (yesNoInfo.passive.charasGameParam.memory.passivePromiseHousePartys.Count > 0 || yesNoInfo.passive.charasGameParam.memory.activePromiseHousePartys.Count > 0) return _oldAnswerInfo;
-
-                        if (yesNoInfo.active != null && yesNoInfo.passive != null)
-                        {
-                            if (yesNoInfo.passive.gameParameter.LvChastity > 2)
-                            {
-                                if (_oldAnswerInfo.rate < 10)
-                                {
-                                    if (!yesNoInfo.passive.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(askingCharaID)) break;
-
-                                    _oldAnswerInfo.rate = CalcBBQAnswerBaseRate(yesNoInfo.passive, yesNoInfo.active, askingCharaID);
-                                    if (_oldAnswerInfo.rate <= 0) break;
-                                    if (_oldAnswerInfo.rate >= 100)
-                                    {
-                                        _oldAnswerInfo.ans = 0;
-                                        break;
-                                    }
-                                    int chance = _rnd.Next(1, 100);
-                                    if (chance <= _oldAnswerInfo.rate) _oldAnswerInfo.ans = 0;
-                                    else _oldAnswerInfo.ans = 1;
-                                }
-                            }
-                        }
-                        break;
-
-                    case 59:
-                        if (!isGameFixes[2]) break;
-                        if (_questionCount == 1)
-                        {
-                            switch (yesNoInfo.passive.gameParameter.LvChastity)
-                            {
-                                case 3:
-                                    if (yesNoInfo.passive.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(askingCharaID))
-                                    {
-                                        if (yesNoInfo.passive.charasGameParam.sensitivity.tableFavorabiliry[askingCharaID].ranks[0] == SensitivityParameter.Rank.HIGH || yesNoInfo.passive.charasGameParam.sensitivity.tableFavorabiliry[askingCharaID].ranks[0] == SensitivityParameter.Rank.MAX) break;
-                                        else
-                                        {
-                                            if (yesNoInfo.passive.charasGameParam.sensitivity.tableFavorabiliry[askingCharaID].ranks[0] == SensitivityParameter.Rank.MIDDLE)
-                                            {
-                                                _oldAnswerInfo.rate = 10;
-                                                int chance = _rnd.Next(1, 100);
-                                                if (chance <= _oldAnswerInfo.rate) _oldAnswerInfo.ans = 0;
-                                                else _oldAnswerInfo.ans = 1;
-                                            }
-                                            else
-                                            {
-                                                _oldAnswerInfo.rate = 0;
-                                                _oldAnswerInfo.ans = 1;
-                                            }
-                                        }
-                                    }
-                                    break;
-
-                                case 4:
-                                    if (yesNoInfo.passive.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(askingCharaID))
-                                    {
-                                        if (yesNoInfo.passive.charasGameParam.sensitivity.tableFavorabiliry[askingCharaID].ranks[0] == SensitivityParameter.Rank.HIGH || yesNoInfo.passive.charasGameParam.sensitivity.tableFavorabiliry[askingCharaID].ranks[0] == SensitivityParameter.Rank.MAX) break;
-                                        else
-                                        {
-                                            _oldAnswerInfo.rate = 0;
-                                            _oldAnswerInfo.ans = 1;
-                                        }
-                                    }
-                                    break;
-                            }
-                        }
-
-                        break;
-                    case 30:
-                        if (isForceActions[0])
-                        {
-                            if (yesNoInfo.passive.charasGameParam.memory.lovers.Count > 0)
-                            {
-                                var lovers = yesNoInfo.passive.charasGameParam.memory.lovers;
-                                foreach (var lover in lovers) 
-                                {
-                                    if (lover.id == yesNoInfo.active.charasGameParam.Index)
-                                    {
-                                        _oldAnswerInfo.rate = 100;
-                                        _oldAnswerInfo.ans = 0;
-                                    } 
-                                }
-                            }
-                        }
-                        break;
-                }
-            }
-
-            if (isNewLowestRate[0])
-            {
-                if (isNewLowestRate[1] && isNewLowestRate[2])
-                {
-                    var _newLowestRate = CustomGameBalancePlugin.GetNewRate();
-                    if (_oldAnswerInfo.rate < _newLowestRate) _oldAnswerInfo.rate = _newLowestRate;
-                    if (_oldAnswerInfo.ans == 1 && _oldAnswerInfo.rate > 0) 
-                    {
-                        var chance = _rnd.Next(1, 100);
-                        if (chance <= _newLowestRate) _oldAnswerInfo.ans = 0;
-                    }
-                }
-                if (yesNoInfo.aParam.isPC)
-                {
-                    if (isNewLowestRate[1])
-                    {
-                        var _newLowestRate = CustomGameBalancePlugin.GetNewRate();
-                        if (_oldAnswerInfo.rate < _newLowestRate) _oldAnswerInfo.rate = _newLowestRate;
-                        if (_oldAnswerInfo.ans == 1 && _oldAnswerInfo.rate > 0)
-                        {
-                            var chance = _rnd.Next(1, 100);
-                            if (chance <= _newLowestRate) _oldAnswerInfo.ans = 0;
-                            else _oldAnswerInfo.ans = 1;
-                        }
-                    }
-                }
-                else
-                {
-                    if (isNewLowestRate[2])
-                    {
-                        var _newLowestRate = CustomGameBalancePlugin.GetNewRate();
-                        if (_oldAnswerInfo.rate < _newLowestRate) _oldAnswerInfo.rate = _newLowestRate;
-                        if (_oldAnswerInfo.ans == 1 && _oldAnswerInfo.rate > 0)
-                        {
-                            var chance = _rnd.Next(1, 100);
-                            if (chance <= _newLowestRate) _oldAnswerInfo.ans = 0;
-                        }
-                    }
-                }
-            }
-
-            if (CustomGameBalancePlugin.GetFortuneFix())
-            {
-                if (_oldAnswerInfo.rate > 0 && Manager.Game.saveData.dataCount.circularNotice == 7 && Manager.Game.saveData.dataCount.isCircularNoticeUse)
-                {
-                    _oldAnswerInfo.rate *= 1.1f;
-                    if (_oldAnswerInfo.ans == 1 && _oldAnswerInfo.rate > 0)
-                    {
-                        var chance = _rnd.Next(1, 100);
-                        if (chance <= _oldAnswerInfo.rate) _oldAnswerInfo.ans = 0;
-                        else _oldAnswerInfo.ans = 1;
-                    }
-                }
-            }
-
-            return _oldAnswerInfo;
-        }*/
-        /*public static int CalcBBQAnswerBaseRate(Actor _actor, Actor _TargetActor, int targetID)
-        {
-            int baseRate = 0;
-
-            if ((_actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[0] == SensitivityParameter.Rank.MIDDLE && _actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[1] == SensitivityParameter.Rank.MIDDLE)
-                || _actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[1] == SensitivityParameter.Rank.HIGH 
-                || (_actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[0] == SensitivityParameter.Rank.MIDDLE && _actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[2] == SensitivityParameter.Rank.LOW && _actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[3] == SensitivityParameter.Rank.LOW))
-            {
-                switch (_actor.gameParameter.LvChastity)
-                {
-                    case 3:
-                        if (_actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[1] == SensitivityParameter.Rank.HIGH) baseRate = 60;
-                        if (_actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[0] == SensitivityParameter.Rank.MIDDLE && _actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[1] == SensitivityParameter.Rank.MIDDLE) baseRate = 50;
-                        else if (_actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[0] == SensitivityParameter.Rank.MIDDLE && _actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[2] == SensitivityParameter.Rank.LOW && _actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[3] == SensitivityParameter.Rank.LOW) baseRate = 40;
-                        else break;
-                        if (_actor.charasGameParam.memory.lovers.Count > 0)
-                        {
-                            foreach (var lover in _actor.charasGameParam.memory.lovers)
-                            {
-                                if (lover.id == targetID)
-                                {
-                                    baseRate += 22;
-                                    break;
-                                } 
-                            }
-                        }
-                        break;
-                    case 4:
-                        if (_actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[1] == SensitivityParameter.Rank.HIGH) baseRate = 40;
-                        if (_actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[0] == SensitivityParameter.Rank.MIDDLE && _actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[1] == SensitivityParameter.Rank.MIDDLE) baseRate = 30;
-                        else if (_actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[0] == SensitivityParameter.Rank.MIDDLE && _actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[2] == SensitivityParameter.Rank.LOW && _actor.charasGameParam.sensitivity.tableFavorabiliry[targetID].ranks[3] == SensitivityParameter.Rank.LOW) baseRate = 20;
-                        else break;
-                        if (_actor.charasGameParam.memory.lovers.Count > 0)
-                        {
-                            foreach (var lover in _actor.charasGameParam.memory.lovers)
-                            {
-                                if (lover.id == targetID)
-                                {
-                                    baseRate += 11;
-                                    break;
-                                }
-                            }
-                        }
-                        break;
-                }
-
-                ///Additive and subtraction
-                //Check Traits
-                if (_actor.gameParameter.individuality.answer.Contains(6)) baseRate += 4;
-                if (_actor.gameParameter.individuality.answer.Contains(7)) baseRate += 7;
-                if (_actor.gameParameter.individuality.answer.Contains(9)) baseRate -= 10;
-                if (_actor.gameParameter.individuality.answer.Contains(27)) baseRate += 5;
-
-                //Check Mood
-                if (_actor.charasGameParam.state._State_k__BackingField == StateParameter.StateKind.UPLIFT) baseRate += 4;
-                if (_actor.charasGameParam.state._State_k__BackingField == StateParameter.StateKind.EARNESTNESS) baseRate += 8;
-                if (_actor.charasGameParam.state._State_k__BackingField == StateParameter.StateKind.ANGER) baseRate -= 16;
-                if (_actor.charasGameParam.state._State_k__BackingField == StateParameter.StateKind.DISAPPOINTMENT) baseRate -= 8;
-                if (_actor.charasGameParam.state._State_k__BackingField == StateParameter.StateKind.TENSION) baseRate -= 4;
-
-                ///Multi and Division
-                if (_actor.gameParameter.individuality.answer.Contains(2))
-                {
-                    if (_TargetActor.parameter.sex == 0)
-                    {
-                        var division = baseRate / 1.1f;
-                        baseRate = (int)division;
-                    }
-                }
-                if (_actor.gameParameter.individuality.answer.Contains(3))
-                {
-                    if (_TargetActor.parameter.sex == 1)
-                    {
-                        var division = baseRate / 1.1f;
-                        baseRate = (int)division;
-                    }
-                }
-                if (_TargetActor.gameParameter.individuality.answer.Contains(4))
-                {
-                    if (_TargetActor.parameter.sex != _actor.parameter.sex)
-                    {
-                        var division = baseRate * 1.1f;
-                        baseRate = (int)division;
-                    }
-                    else
-                    {
-                        var division = baseRate / 1.1f;
-                        baseRate = (int)division;
-                    }
-                }
-                if (_actor.gameParameter.individuality.answer.Contains(5))
-                {
-                    if (_TargetActor.parameter.sex == _actor.parameter.sex)
-                    {
-                        var division = baseRate * 1.1f;
-                        baseRate = (int)division;
-                    }                  
-                }
-
-                ///Overrides
-                if (_actor.gameParameter.individuality.answer.Contains(29))
-                {
-                    if (_actor.charasGameParam.memory.lovers.Count > 0)
-                    {
-                        bool foundLover = false;
-                        foreach (var lover in _actor.charasGameParam.memory.lovers)
-                        {
-                            if (lover.id == targetID)
-                            {
-                                foundLover = true;
-                                break;
-                            }
-                        }
-                        if (foundLover) baseRate += 5;
-                        else baseRate = 0;
-                    }
-                }
-            }
-
-            if (baseRate < 0) baseRate = 0;
-            return baseRate;
-        }*/   
+        }   
 
         public static int NewSuccessValue(int _successNo)
         {
@@ -1103,461 +812,6 @@ namespace SVS_CustomGameBalance
                 }
             }
             return _successNo;
-        }
-        public static void GetNightRateList()
-        {
-            if (nightTable.Count == 0)
-            {
-                var nightEventTable = NightEventManager.Instance.table;
-                foreach (var table in nightEventTable)
-                {
-                    AnswerBaseDataParam abdp = new();
-                    abdp.ID = table.Value.ID;
-                    abdp.BaseRates = new();
-                    foreach (var bRates in table.Value.BaseRates)
-                    {
-                        abdp.BaseRates.Add(bRates);
-                    }
-                    abdp.Rates = new();
-                    foreach (var rate in table.Value.Rates)
-                    {
-                        abdp.Rates.Add(rate);
-                    }
-
-                    nightTable.Add(table.Key, abdp);
-                }
-            }
-        }
-        public static void SetNightCharacters()
-        {
-            charas.Clear();
-            var tempAI = SimulationScene.Instance.tempAIs;
-            var playerID = GameChara.Player.charasGameParam.Index;
-            var playerSex = GameChara.Player.chaCtrl.data.Parameter.sex;
-            var playerSexTarget = GameChara.Player.gameParameter.SexualTarget;
-
-            if (tempAI == null)
-            {
-                CustomGameBalancePlugin.Log.LogInfo($"ERROR! tempAIs is Null!");
-                return;
-            }
-            if (tempAI.Count == 0)
-            {
-                CustomGameBalancePlugin.Log.LogInfo($"ERROR! tempAIs is Empty!");
-                return;
-            }
-
-            //CustomGameBalancePlugin.Log.LogInfo($"Character in tempAIs {tempAI.Count}");
-            //Get Chara Pool
-            foreach (var ai in tempAI)
-            {
-                if (ai.charaData.charasGameParam.isPC || ai.charaData.chaCtrl.data.Parameter.sex == 0) continue;
-                //if (ai.charaData.charasGameParam.isPC && ai.charaData.chaCtrl.data.Parameter.sex == 1) continue;
-                if (ai.charaData.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(playerID))
-                {
-                    var charaRanks = ai.charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].ranks;
-                    var charaMood = ai.charaData.charasGameParam.state.State;
-                    if (charaRanks[0] == SensitivityParameter.Rank.MIDDLE || charaRanks[0] == SensitivityParameter.Rank.HIGH ||
-                        charaRanks[1] == SensitivityParameter.Rank.MIDDLE || charaRanks[1] == SensitivityParameter.Rank.HIGH)
-                    {
-                        if (charaMood == StateParameter.StateKind.ANGER || charaMood == StateParameter.StateKind.DISAPPOINTMENT) continue;
-                        charas.Add(ai);
-                        //CustomGameBalancePlugin.Log.LogInfo($"Chara ID:{ai.charaData.charasGameParam.Index} Added to character Pool:");
-                    }
-                }
-            }
-
-            //CustomGameBalancePlugin.Log.LogInfo($"Charas for night event {charas.Count}");
-
-            //Select Chara from Pool and Type of visit
-            if (charas.Count > 0)
-            {
-                int[] chance = CustomGameBalancePlugin.GetNightChance();
-                if (chance[0] > 0 || chance[1] > 0)
-                {
-                    int[] visitType = new int[charas.Count];
-                    //CustomGameBalancePlugin.Log.LogInfo($"Checks Lists (They should be the same): List1:{visitType.Length} = List2:{charas.Count}");
-
-                    System.Collections.Generic.List<int> visitHigh = new();
-
-                    int charaSelectedIndex;
-                    for (int i = 0; i < charas.Count; i++)
-                    {
-                        if (i >= charas.Count) break;
-                        if (charas[i].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].mostRanks != null)
-                        {
-                            if (charas[i].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].mostRanks.Count > 0)
-                            {
-                                visitType[i] = charas[i].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].mostRanks[0];
-                            }
-                            else visitType[i] = 1;
-                        }
-                        else visitType[i] = 1;
-
-                        if (charas[i].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].ranks != null)
-                        {
-                            if (charas[i].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].ranks.Count > 3)
-                            {
-                                if (charas[i].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].ranks[visitType[i]] == SensitivityParameter.Rank.HIGH) visitHigh.Add(i);
-                            }
-                        }
-
-                        if (charas[i].charaData.charasGameParam.memory.lovers.Count > 0)
-                        {
-                            foreach (var lover in charas[i].charaData.charasGameParam.memory.lovers)
-                            {
-                                if (lover.id == playerID)
-                                {
-                                    visitHigh.Add(i);
-                                    break;
-                                } 
-                            }
-                        } 
-                        if (charas[i].charaData.gameParameter.LvSociability > 3) visitHigh.Add(i);
-
-                        var traits = charas[i].charaData.gameParameter.individuality.answer;
-                        if (traits.Contains(27)) visitHigh.Add(i);
-                        if (traits.Contains(36)) visitHigh.Add(i);                
-                    }
-                    //CustomGameBalancePlugin.Log.LogInfo($"Regular Visit List Count: {visitType.Length}");
-                    //CustomGameBalancePlugin.Log.LogInfo($"HighVisit Count: {visitHigh.Count}");
-
-                    int selectedFromAllPool = 0;
-                    if (visitType.Length > 1)
-                    {
-                        selectedFromAllPool = _rnd.Next(0, visitType.Length);
-                    }
-
-                    int selectedFromHighPool = 0;
-                    if (visitHigh.Count > 1)
-                    {
-                        selectedFromHighPool = _rnd.Next(0, visitHigh.Count);
-                    }
-
-                    if (!visitHigh.Contains(selectedFromAllPool) && visitHigh.Count > 0)
-                    {
-                        int finalSelection = _rnd.Next(0, 3);
-                        if (finalSelection == 0) charaSelectedIndex = selectedFromAllPool;
-                        else charaSelectedIndex = visitHigh[selectedFromHighPool];
-                    }
-                    else charaSelectedIndex = selectedFromAllPool;                
-
-                    int type = visitType[charaSelectedIndex];
-                    bool isLover = false;
-                    
-                    //CustomGameBalancePlugin.Log.LogInfo($"Pre Selection of Chara ID: {charaSelectedIndex}");
-                    //CustomGameBalancePlugin.Log.LogInfo($"Chara Visit Type: {type}");
-
-                    //Check character Orientation
-                    if (charas[charaSelectedIndex].charaData.gameParameter.SexualTarget == 0 || playerSexTarget == 0)//Hetero
-                    {
-                        if (charas[charaSelectedIndex].charaData.chaCtrl.data.Parameter.sex == playerSex)
-                        {
-                            type = 1;
-                            selectedAI = charas[charaSelectedIndex];
-                            selectedCharaID = charas[charaSelectedIndex].charaData.charasGameParam.Index;
-                            nightType = type;
-                            //CustomGameBalancePlugin.Log.LogInfo($"Selected Hetero:{selectedCharaID} - {selectedAI.charaData.Name}");
-                            return;
-                        } 
-                    }
-
-                    if (charas[charaSelectedIndex].charaData.gameParameter.SexualTarget == 4 || playerSexTarget == 4)//Homo
-                    {
-                        if (charas[charaSelectedIndex].charaData.chaCtrl.data.Parameter.sex != playerSex)
-                        {
-                            type = 1;
-                            selectedAI = charas[charaSelectedIndex];
-                            selectedCharaID = charas[charaSelectedIndex].charaData.charasGameParam.Index;
-                            nightType = type;
-                            //CustomGameBalancePlugin.Log.LogInfo($"Selected Homo:{selectedCharaID} - {selectedAI.charaData.Name}");
-                            return;
-                        } 
-                    }
-
-                    //Check Hard Conditions
-                    switch (charas[charaSelectedIndex].charaData.gameParameter.LvChastity)
-                    {
-                        case 4:
-                            switch (type)
-                            {
-                                case 0://Sex Visit
-                                    if (charas[charaSelectedIndex].charaData.charasGameParam.memory.pairTable[playerID].TotalH == 0)
-                                    {
-                                        type = 1;
-                                        break;
-                                    }
-                                    if (charas[charaSelectedIndex].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].ranks[0] != SensitivityParameter.Rank.HIGH)
-                                    {
-                                        type = 1;
-                                        break;
-                                    }
-                                    if (charas[charaSelectedIndex].charaData.gameParameter.individuality.answer.Contains(29))
-                                    {
-                                        if (charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers.Count > 0)
-                                        {
-                                            foreach (var lover in charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers)
-                                            {
-                                                if (lover.id == playerID)
-                                                {
-                                                    isLover = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if (!isLover)
-                                        {
-                                            type = 1;
-                                        }
-                                    }
-                                    break;
-                                case 1://Friend Visit
-                                    if (charas[charaSelectedIndex].charaData.charasGameParam.state.State == StateParameter.StateKind.RUT && 
-                                        charas[charaSelectedIndex].charaData.charasGameParam.memory.pairTable[playerID].TotalH > 0 &&
-                                        charas[charaSelectedIndex].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].ranks[0] == SensitivityParameter.Rank.HIGH)
-                                    {
-                                        if (charas[charaSelectedIndex].charaData.gameParameter.individuality.answer.Contains(29))
-                                        {
-                                            if (charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers.Count > 0)
-                                            {
-                                                foreach (var lover in charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers)
-                                                {
-                                                    if (lover.id == playerID)
-                                                    {
-                                                        isLover = true;
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                            if (!isLover)
-                                            {
-                                                break;
-                                            }
-                                        }
-                                        type = 0;
-                                    }
-                                    break;
-                            }                        
-                            break;
-                        case 3:
-                            switch (type)
-                            {
-                                case 0://Sex Visit
-                                    if (charas[charaSelectedIndex].charaData.charasGameParam.memory.pairTable[playerID].TotalH == 0)
-                                    {
-                                        type = 1;
-                                        break;
-                                    }
-                                    if (charas[charaSelectedIndex].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].ranks[0] == SensitivityParameter.Rank.MIDDLE &&
-                                        charas[charaSelectedIndex].charaData.charasGameParam.state.State != StateParameter.StateKind.RUT)
-                                    {
-                                        type = 1;
-                                        break;
-                                    }
-                                    if (charas[charaSelectedIndex].charaData.gameParameter.individuality.answer.Contains(29))
-                                    {
-                                        if (charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers.Count > 0)
-                                        {
-                                            foreach (var lover in charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers)
-                                            {
-                                                if (lover.id == playerID)
-                                                {
-                                                    isLover = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if (!isLover)
-                                        {
-                                            type = 1;
-                                        }
-                                    }
-                                    break;
-                                case 1://Friend Visit
-                                    if (charas[charaSelectedIndex].charaData.charasGameParam.state.State == StateParameter.StateKind.RUT &&
-                                        charas[charaSelectedIndex].charaData.charasGameParam.memory.pairTable[playerID].TotalH > 0 &&
-                                        (charas[charaSelectedIndex].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].ranks[0] == SensitivityParameter.Rank.HIGH ||
-                                        charas[charaSelectedIndex].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].ranks[0] == SensitivityParameter.Rank.MIDDLE))
-                                    {
-                                        if (charas[charaSelectedIndex].charaData.gameParameter.individuality.answer.Contains(29))
-                                        {
-                                            if (charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers.Count > 0)
-                                            {
-                                                foreach (var lover in charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers)
-                                                {
-                                                    if (lover.id == playerID)
-                                                    {
-                                                        isLover = true;
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                            if (!isLover)
-                                            {
-                                                break;
-                                            }
-                                        }
-                                        type = 0;
-                                    }
-                                    break;
-                            }
-                            break;                        
-                        case 2:
-                            switch (type)
-                            {
-                                case 0://Sex Visit
-                                    if (charas[charaSelectedIndex].charaData.gameParameter.individuality.answer.Contains(29))
-                                    {
-                                        if (charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers.Count > 0)
-                                        {
-                                            foreach (var lover in charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers)
-                                            {
-                                                if (lover.id == playerID)
-                                                {
-                                                    isLover = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if (!isLover)
-                                        {
-                                            type = 1;
-                                        }
-                                    }
-                                    break;
-                                case 1://Friend Visit
-                                    if (charas[charaSelectedIndex].charaData.charasGameParam.state.State == StateParameter.StateKind.RUT &&
-                                        charas[charaSelectedIndex].charaData.charasGameParam.sensitivity.tableFavorabiliry[playerID].ranks[0] == SensitivityParameter.Rank.MIDDLE)
-                                    {
-                                        type = 0;
-                                    }
-                                    break;
-                            }
-                            break;                           
-                        case 1:
-                            switch (type)
-                            {
-                                case 0://Sex Visit
-                                    break;
-                                case 1://Friend Visit
-                                    if (charas[charaSelectedIndex].charaData.charasGameParam.state.State == StateParameter.StateKind.RUT)
-                                    {
-                                        type = 0;
-                                    }
-                                    break;
-                            }
-                            break;                          
-                        case 0:
-                            switch (type)
-                            {
-                                case 0://Sex Visit
-                                    if (charas[charaSelectedIndex].charaData.gameParameter.individuality.answer.Contains(29))
-                                    {
-                                        if (charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers.Count > 0)
-                                        {
-                                            foreach (var lover in charas[charaSelectedIndex].charaData.charasGameParam.memory.lovers)
-                                            {
-                                                if (lover.id == playerID)
-                                                {
-                                                    isLover = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if (!isLover)
-                                        {
-                                            type = 1;
-                                        }
-                                    }
-                                    break;
-                                case 1://Friend Visit
-                                    if (charas[charaSelectedIndex].charaData.charasGameParam.state.State == StateParameter.StateKind.RUT)
-                                    {
-                                        type = 0;
-                                    }
-                                    break;
-                            }
-                            break;
-                    }
-                    //CustomGameBalancePlugin.Log.LogInfo($"Chara Chastity: {charas[charaSelectedIndex].charaData.gameParameter.LvChastity}");
-                    //CustomGameBalancePlugin.Log.LogInfo($"Chara Visit Type Final: {type}");
-                    //selectedAI = charas[charaSelectedIndex];
-                    selectedCharaID = charas[charaSelectedIndex].charaData.charasGameParam.Index;
-                    nightType = type;
-                    //CustomGameBalancePlugin.Log.LogInfo($"Selected CharaID:{selectedCharaID}");
-                    return;     
-                }                 
-            }          
-            CustomGameBalancePlugin.Log.LogInfo($"No available characters for night visit");
-            nightType = -1;
-            selectedCharaID = -1;
-        }
-
-        public static void NightEventChance(NightEventManager nightEvent, Actor chara)
-        {
-            if (chara == null) return;
-            if (nightEvent == null) return;
-            if (chara.charasGameParam.Index == selectedCharaID)
-            {
-                //CustomGameBalancePlugin.Log.LogInfo($"Chara Found");
-                var visitType = CustomGameBalancePlugin.GetNightChance();
-
-                switch (nightType)
-                {
-                    case 0:
-                        var chanceLewd = _rnd.Next(0, 100);
-                        //CustomGameBalancePlugin.Log.LogInfo($"Mod Chance {visitType[0]}%");
-
-                        if (chanceLewd <= visitType[0])
-                        {
-                            for (int idx = 0; idx < 3; idx++)
-                            {
-                                for (int i = 0; i < nightEvent.table[idx].BaseRates.Count; i++)
-                                {
-                                    nightEvent.table[idx].BaseRates[i] = idx is 2 ? 100f : 0f;
-                                }
-                                for (int i = 0; i < nightEvent.table[idx].Rates.Count; i++)
-                                {
-                                    nightEvent.table[idx].Rates[i] = idx is 2 ? 1f : 0f;
-                                }
-                            }
-                            return;
-                        }                    
-                        break;
-                    case 1:
-                        var chanceNormal = _rnd.Next(0, 100);
-                        //CustomGameBalancePlugin.Log.LogInfo($"Mod Chance {visitType[1]}%");
-
-                        if (chanceNormal <= visitType[1])
-                        {
-                            for (int idx = 0; idx < 3; idx++)
-                            {
-                                for (int i = 0; i < nightEvent.table[idx].BaseRates.Count; i++)
-                                {
-                                    nightEvent.table[idx].BaseRates[i] = idx is 1 ? 100f : 0f;
-                                }
-                                for (int i = 0; i < nightEvent.table[idx].Rates.Count; i++)
-                                {
-                                    nightEvent.table[idx].Rates[i] = idx is 1 ? 1f : 0f;
-                                }
-                            }
-                            return;
-                        }                          
-                        break;
-                }  
-            }
-
-            for (int idx = 0; idx < 3; idx++)
-            {
-                for (int i = 0; i < nightEvent.table[idx].BaseRates.Count; i++)
-                {
-                    nightEvent.table[idx].BaseRates[i] = nightTable[idx].BaseRates[i];
-                }
-                for (int i = 0; i < nightEvent.table[idx].Rates.Count; i++)
-                {
-                    nightEvent.table[idx].Rates[i] = nightTable[idx].Rates[i];
-                }
-            }
         }
 
         public static int NewCommandTarget(Actor actor, int command, int targetCharaID)
@@ -1958,7 +1212,7 @@ namespace SVS_CustomGameBalance
             {
                 if (thinking._charaCtrl.ai._charaData.gameParameter.LvChastity > 2)
                 {
-                    if (thinking._charaCtrl.ai._charaData.gameParameter.isVirgin) return;
+                    if (!thinking._charaCtrl.ai._charaData.gameParameter.isVirgin) return;
                 }
 
                 if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"**********************");
@@ -2058,7 +1312,7 @@ namespace SVS_CustomGameBalance
             Dictionary<int, int> charaWeights = new Dictionary<int, int>();
             var targetID = targetActor.charasGameParam.Index;
             int summedWeights = 0;
-            //bool isFuta = false;
+            bool isFuta = false;
 
             if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Selecting 3P Partner: sex type {sexType}");
             if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Chara 1: {chara.charasGameParam.Index} sex: {chara.parameter.sex} virtue: {virtueLV}");
@@ -2069,8 +1323,8 @@ namespace SVS_CustomGameBalance
                 if (chara.parameter.sex == 0 && targetActor.parameter.sex == 0) sexType = 1;
                 if (chara.parameter.sex == 1 && targetActor.parameter.sex == 1)
                 {
-                    //if (!targetActor.parameter.isFutanari && !_actor.parameter.isFutanari) isFuta = true;
-                    sexType = 0;
+                    if (!targetActor.parameter.isFutanari && !chara.parameter.isFutanari) isFuta = true;
+                    //sexType = 0;
                 }
             }
 
@@ -2200,7 +1454,7 @@ namespace SVS_CustomGameBalance
                             }
                             else if (sexType == -1)
                             {
-                                //if (isFuta && (thatCharacter.parameter.sex == 1 && !thatCharacter.parameter.isFutanari)) continue;
+                                if (isFuta && (thatCharacter.parameter.sex == 1 && !thatCharacter.parameter.isFutanari)) continue;
                                 switch (virtueLV)
                                 {
                                     case 2://Normal Virtue/Chastity
@@ -2311,33 +1565,6 @@ namespace SVS_CustomGameBalance
             }
             if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"No partner for 3P found");
         }
-        public static bool ThreesomeConfirmation(Actor chara, bool result)
-        {
-            if (chara.charasGameParam.commandNo == 77)
-            {
-                if (Game.Charas.TryGetValue(chara.charasGameParam.thatPersonCharaArrayIndex, out var thatChara))
-                {
-                    if (thatChara.charaBase != null)
-                    {
-                        if (thatChara.charaBase.BehaviourCtrl != null)
-                        {
-                            if (MapManager.Instance.MapListTable.ContainsKey(thatChara.charaBase.BehaviourCtrl.nowMapID))
-                            {
-                                if (MapManager.Instance.MapListTable[thatChara.charaBase.BehaviourCtrl.nowMapID].Kind == 1) 
-                                {
-                                    if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"3P Target is on a Private Room");                                        
-                                }
-                            }
-                            else chara.charasGameParam.commandNo = 39;
-                        }
-                        else chara.charasGameParam.commandNo = 39;
-                    }
-                    else chara.charasGameParam.commandNo = 39;
-                }
-                else chara.charasGameParam.commandNo = 39;
-            }
-            return result;
-        }
         public static bool CanJoinThreesome(Actor chara, Actor actor1, Actor actor2, bool isADV, int rate)
         {
             if (chara == null || actor1 == null || actor2 == null) return false;
@@ -2405,7 +1632,6 @@ namespace SVS_CustomGameBalance
             bool isLover2 = false;
 
             if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"CharaID: {chara.charasGameParam.Index} - Virtue LV: {virtue}");
-
             //Conditions base on Virtue/Chastity Lv
             switch (virtue)
             {
@@ -2414,7 +1640,10 @@ namespace SVS_CustomGameBalance
                 case 1:
                     if (chara.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(partner1ID) && chara.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(partner2ID))
                     {
-                        if (chara.charasGameParam.sensitivity.tableFavorabiliry[partner1ID].mostRanks[0] < 2 && chara.charasGameParam.sensitivity.tableFavorabiliry[partner2ID].mostRanks[0] < 2) return true;
+                        if (chara.charasGameParam.sensitivity.tableFavorabiliry[partner1ID].mostRanks.Count > 0 && chara.charasGameParam.sensitivity.tableFavorabiliry[partner2ID].mostRanks.Count > 0)
+                        {
+                            if (chara.charasGameParam.sensitivity.tableFavorabiliry[partner1ID].mostRanks[0] < 2 && chara.charasGameParam.sensitivity.tableFavorabiliry[partner2ID].mostRanks[0] < 2) return true;
+                        }
                     }
                     return false;
                 case 2:
