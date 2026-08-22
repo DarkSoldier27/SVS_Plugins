@@ -36,6 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVS_TraitUnlocker", "src\SV
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVS_Detour", "src\SVS_Detour\SVS_Detour.csproj", "{26AB79B8-FD3E-6896-A721-25CCEAFDC50F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVS_ADVLoader", "src\SVS_ADVLoader\SVS_ADVLoader.csproj", "{3A58CC00-1B8C-4172-A0EE-817E05F5CF49}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
