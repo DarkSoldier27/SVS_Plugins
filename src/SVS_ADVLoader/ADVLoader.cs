@@ -29,7 +29,7 @@ namespace SVS_ADVLoader
             
             string filePath = "";
             string[] advDirectories = [];
-            int type = GetAssetType(asset);
+            int type = GetAssetType(asset, bundle);
 
             //Get the type of the ADV (Character, Common or Other)
             if (type > -1 && type < 30)
@@ -39,7 +39,7 @@ namespace SVS_ADVLoader
                 advDirectories = Directory.GetDirectories(filePath, $"{charaID}_*", SearchOption.TopDirectoryOnly);
                 if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"ADV Type: Chara");
             }
-            else if (type > 30 && type < 60)
+            else if (type > 30)
             {
                 filePath = Path.Combine(Paths.GameRootPath, ADVLoaderParam.GetADVFolders("common"));
                 if (!Directory.Exists(filePath)) return true;
@@ -57,7 +57,6 @@ namespace SVS_ADVLoader
                 return true;
             } 
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Found custom ADV folders");
-
 
             string[] advFiles = Directory.GetFiles(advDirectories[0], $"{asset}*.json", SearchOption.AllDirectories);
             if (advFiles.Length == 0)
@@ -164,15 +163,16 @@ namespace SVS_ADVLoader
             }
             return true;
         }      
-        public static int GetAssetType(string asset)
+        public static int GetAssetType(string asset, string bundle)
         {
             string[] names = asset.Split('_');
             switch (names[0])
             {
                 case "a":
+                    if (bundle.Contains("common")) return 100;
                     return 0;
                 case "abduction":
-                    return 27;
+                    return 0;
                 case "all":
                     return 1;
                 case "ask":
@@ -194,11 +194,20 @@ namespace SVS_ADVLoader
                 case "move":
                     return 10;
                 case "n":
+                    if (bundle.Contains("common"))
+                    {
+                        if (asset.Contains("n_H")) return 102;
+                        return 101;
+                    } 
                     return 11;
                 case "no":
                     return 12;
                 case "o":
                     return 13;
+                case "p":
+                    return 103;
+                case "pc":
+                    return 200;
                 case "person":
                     return 14;
                 case "r":
@@ -222,19 +231,32 @@ namespace SVS_ADVLoader
                 case "yn":
                     return 24;
                 case "i":
+                    if (asset.Contains("i_a")) return 124;
+                    if (asset.Contains("i_p")) return 124;
                     return 25;
                 case "e":
                     return 26;
                 default:
                     switch (asset)
                     {
+                        case "s_83": return 37;
+                        case "s_84": return 38;
+                        case "s_85": return 39;
                         case "s_86": return 40;
                         case "a_25_1": return 41;
                         case "p_25_1": return 42;
                         case "a_43_1": return 43;
                         case "p_43_1": return 44;
                         case "timechange": return 45;
-                        default: return -1;
+                        default:
+                            if (asset.Contains("abductionreport")) return 400;
+                            if (asset.Contains("board")) return 500;
+                            if (asset.Contains("dayend")) return 50;
+                            if (asset.Contains("evaluation")) return 600;
+                            if (asset.Contains("morning")) return 60;
+                            if (asset.Contains("nightcrawling")) return 61;
+                            if (asset.Contains("nightlife")) return 62;
+                            return -1;
                     }
             }
         }
@@ -244,8 +266,6 @@ namespace SVS_ADVLoader
             string[] folders = [Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Chara/"), Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Common/")];
             if (!Directory.Exists(folders[0])) Directory.CreateDirectory(folders[0]);
             if (!Directory.Exists(folders[1])) Directory.CreateDirectory(folders[1]);
-
-
         }
     }
 }

@@ -50,7 +50,11 @@ namespace SVS_ADVLoader
                     var sceneList = GetScenarioListFromOpenData(files[1], files[0]);
                     if (sceneList != null)
                     {
-                        if (sceneList.Count > 0) extractedText = GetJsonText(sceneList, files[0]);
+                        if (sceneList.Count > 0)
+                        {
+                            extractedText = GetJsonText(sceneList, files[0]);
+                            assetName = files[0];
+                        } 
                     }
                 }
             }
@@ -64,8 +68,11 @@ namespace SVS_ADVLoader
                         var sceneList = GetScenarioListFromOpenData(scenario.LoadBundleName, scenario.LoadAssetName);
                         if (sceneList != null)
                         {
-                            if (sceneList.Count > 0) extractedText = GetJsonText(sceneList, scenario.LoadAssetName);
-                            assetName = scenario.LoadAssetName;
+                            if (sceneList.Count > 0)
+                            {
+                                extractedText = GetJsonText(sceneList, scenario.LoadAssetName);
+                                assetName = scenario.LoadAssetName;
+                            } 
                         }
                     }
                     else if (ADVLoaderPlugin.GetExtractionType() == ADVLoaderPlugin.ExtractionType.AllLoadedADVs)
