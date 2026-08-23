@@ -12,6 +12,7 @@ namespace SVS_ADVLoader
         {
             ["chara"] = "abdata/mods/ADVLoader/Scenario/Chara/",
             ["common"] = "abdata/mods/ADVLoader/Scenario/Common/",
+            ["other"] = "abdata/mods/ADVLoader/Scenario/Other/",
         };
         private static Dictionary<string, bool> _ADVFlagList = new Dictionary<string, bool>();
         public class ADVListParam

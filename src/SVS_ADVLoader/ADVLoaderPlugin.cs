@@ -1,4 +1,5 @@
 ﻿using ADV;
+using ADV.Commands.Game.LowChara;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -6,6 +7,7 @@ using BepInEx.Unity.IL2CPP;
 using BepInEx.Unity.IL2CPP.Configuration;
 using HarmonyLib;
 using SV;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace SVS_ADVLoader
@@ -111,7 +113,21 @@ namespace SVS_ADVLoader
             [HarmonyPatch(typeof(OpenData), nameof(OpenData.Load), typeof(string), typeof(string))]
             public static bool ADVSideloader(OpenData __instance, string bundle, string asset)
             {
-                return ADVLoader.SideLoadADV(__instance, bundle, asset);
+                return ADVLoader.SideLoadADV(__instance, bundle, asset, false, out Il2CppSystem.Collections.Generic.List<ScenarioCommand> lowPolyScenarios);
+            }
+
+            [HarmonyPriority(800)]
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(LowCharaADV), nameof(LowCharaADV.Load), typeof(string), typeof(string))]
+            public static bool LowPolyADVSideloader(ref Il2CppSystem.Collections.Generic.List<ScenarioCommand> __result, string bundle, string asset)
+            {
+                ADVLoader.PreLowCharaADV(bundle);
+                if (!ADVLoader.SideLoadADV(null, bundle, asset, true, out Il2CppSystem.Collections.Generic.List<ScenarioCommand> lowPolyScenarios))
+                {
+                    __result = lowPolyScenarios;
+                    return false;
+                }
+                return true;
             }
         }
     }

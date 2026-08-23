@@ -12,13 +12,14 @@ namespace SVS_ADVLoader
     internal class ADVExtractor
     {
         private static bool isExtraction = false;
+
         public static bool IsExtraction()
         {
             return isExtraction;
         }
         public static void GetExtractingKeyDown(SimulationScene simUpdate)
         {
-            if(Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.E))
+            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.E))
             {
                 ExtractADV(null, true);
             }
@@ -32,7 +33,7 @@ namespace SVS_ADVLoader
                     {
                         ExtractADV(adv._scenario, false);
                     }
-                }           
+                }
             }
         }
 
@@ -157,8 +158,7 @@ namespace SVS_ADVLoader
                 return extractedText;
             }
             return "";
-        }
-        
+        } 
         private static void WriteToFile(string extractedText, string name)
         {
             string folderPath = Path.Combine(Paths.GameRootPath, "UserData\\extractedADV");
@@ -166,7 +166,9 @@ namespace SVS_ADVLoader
 
             string fileName = name + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".json";
             string extractedFile = Path.Combine(Paths.GameRootPath, "UserData\\extractedADV\\" + fileName);
+            string fileAssetNameOnly = Path.Combine(Paths.GameRootPath, "UserData\\extractedADV\\" + name + ".json");
             File.WriteAllText(extractedFile, extractedText);
+            File.WriteAllText(fileAssetNameOnly, extractedText);
             ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Done Extracting ADV: {name}. File can be found in UserData/extractedADV");
         }
     }
