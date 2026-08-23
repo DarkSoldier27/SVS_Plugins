@@ -73,7 +73,6 @@ namespace SVS_ADVLoader
         }
         public static void SetFlag(string flagName, bool flagOn)
         {
-            ADVLoaderPlugin.Log.LogInfo($"{_ADVFlagList.Count}");
             if (_ADVFlagList.ContainsKey(flagName)) _ADVFlagList[flagName] = flagOn;
             else _ADVFlagList.Add(flagName, flagOn);
         }

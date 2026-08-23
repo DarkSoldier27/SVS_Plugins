@@ -165,8 +165,8 @@ namespace SVS_ADVLoader
             string fileName = name + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".json";
             string extractedFile = Path.Combine(Paths.GameRootPath, "UserData\\extractedADV\\" + fileName);
             string fileAssetNameOnly = Path.Combine(Paths.GameRootPath, "UserData\\extractedADV\\" + name + ".json");
-            File.WriteAllText(extractedFile, extractedText);
-            File.WriteAllText(fileAssetNameOnly, extractedText);
+            File.WriteAllText(extractedFile, extractedText);//Copy.
+            File.WriteAllText(fileAssetNameOnly, extractedText);//Main file.
             ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Done Extracting ADV: {name}. File can be found in UserData/extractedADV");
         }
     }

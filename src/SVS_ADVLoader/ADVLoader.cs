@@ -82,8 +82,8 @@ namespace SVS_ADVLoader
             }
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Found custom ADV folders");
 
+            //Finding the custom ADV file.
             string[] advFiles = [];
-
             foreach (var advFile in advDirectories)
             {
                 advFiles = Directory.GetFiles(advFile, $"{asset}*.json", SearchOption.AllDirectories);
@@ -97,6 +97,7 @@ namespace SVS_ADVLoader
             }
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Found ADV files for {asset}");
 
+            //Reading the Custom ADV file.
             Dictionary<string, List<ADVLoaderParam.ScenarioParam>> scenarioList = new Dictionary<string, List<ADVLoaderParam.ScenarioParam>>();
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Deserializing Scenarios");
             foreach (var adv in advFiles)
@@ -134,6 +135,7 @@ namespace SVS_ADVLoader
             }
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Deserialization DONE");
 
+            //Findig active flags.
             string advAsset = "";
             foreach (var scenario in scenarioList)
             {
@@ -155,8 +157,9 @@ namespace SVS_ADVLoader
             if (advAsset == "") advAsset = asset;
 
             if (!scenarioList.ContainsKey(advAsset)) return true;
+            
+            //Loading the ADV
             ScenarioCommand[] scenarioCommands = new ScenarioCommand[scenarioList[advAsset].Count];
-
             int sceneCount = 0;
             int index = 0;
             foreach (var sceneCommand in scenarioList[advAsset])
