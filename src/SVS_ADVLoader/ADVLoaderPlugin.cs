@@ -49,6 +49,7 @@ namespace SVS_ADVLoader
             _assetADV = Config.Bind("Extracting Tool", "ADV Asset Name", "", new ConfigDescription("Name of the asset to extract", null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 1 }));
             _bundleADV = Config.Bind("Extracting Tool", "ADV Bundle Path", "adv/scenario/", new ConfigDescription("Path of the ADV file inside the abdata folder.", null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 0 }));
 
+            ADVLoader.CreateADVLoaderDirectory();
             patchedHooks = Harmony.CreateAndPatchAll(typeof(Hooks));
         }
         public enum ExtractionType
