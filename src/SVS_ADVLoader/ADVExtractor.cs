@@ -12,7 +12,6 @@ namespace SVS_ADVLoader
     internal class ADVExtractor
     {
         private static bool isExtraction = false;
-
         public static bool IsExtraction()
         {
             return isExtraction;
@@ -36,7 +35,6 @@ namespace SVS_ADVLoader
                 }
             }
         }
-
         private static void ExtractADV(TextScenario scenario, bool fromPath)
         {
             isExtraction = true;

@@ -100,7 +100,7 @@ namespace SVS_ADVLoader
                 if (_extract_ADV.Value) ADVExtractor.GetExtractingKeyDown(__instance);
             }
 
-            [HarmonyPriority(800)]
+            [HarmonyPriority(300)]
             [HarmonyPrefix]
             [HarmonyPatch(typeof(TextScenario), nameof(TextScenario.LoadFile))]
             public static void PreLoadFile(TextScenario __instance, string bundle, string asset)
@@ -108,7 +108,7 @@ namespace SVS_ADVLoader
                 ADVLoader.PreADVLoadInit(__instance,bundle, asset);
             }
 
-            [HarmonyPriority(800)]
+            [HarmonyPriority(300)]
             [HarmonyPrefix]
             [HarmonyPatch(typeof(OpenData), nameof(OpenData.Load), typeof(string), typeof(string))]
             public static bool ADVSideloader(OpenData __instance, string bundle, string asset)
@@ -116,12 +116,11 @@ namespace SVS_ADVLoader
                 return ADVLoader.SideLoadADV(__instance, bundle, asset, false, out Il2CppSystem.Collections.Generic.List<ScenarioCommand> lowPolyScenarios);
             }
 
-            [HarmonyPriority(800)]
+            [HarmonyPriority(300)]
             [HarmonyPrefix]
             [HarmonyPatch(typeof(LowCharaADV), nameof(LowCharaADV.Load), typeof(string), typeof(string))]
             public static bool LowPolyADVSideloader(ref Il2CppSystem.Collections.Generic.List<ScenarioCommand> __result, string bundle, string asset)
             {
-                ADVLoader.PreLowCharaADV(bundle);
                 if (!ADVLoader.SideLoadADV(null, bundle, asset, true, out Il2CppSystem.Collections.Generic.List<ScenarioCommand> lowPolyScenarios))
                 {
                     __result = lowPolyScenarios;

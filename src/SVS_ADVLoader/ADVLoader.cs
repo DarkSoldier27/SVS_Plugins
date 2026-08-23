@@ -12,7 +12,6 @@ namespace SVS_ADVLoader
 {
     internal class ADVLoader
     {
-        private static readonly Dictionary<string, string> customADVList = new Dictionary<string, string>();
         private static int personalityID = -1;
         public static void PreADVLoadInit(TextScenario scenario, string bundle, string asset)
         {
@@ -20,9 +19,8 @@ namespace SVS_ADVLoader
             if (ADVLoaderPlugin.GetDisplayCurrentADV()) ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Current ADV: {asset}");
             if (scenario.CurrentHeroine != null) personalityID = scenario.CurrentHeroine.personality;
             else personalityID = -1;
-            ADVLoaderParam.ResetADVFlags();
         }
-        public static void PreLowCharaADV(string bundle)
+        public static void PreLowCharaADVInit(string bundle)
         {
             string[] searchPersoID = bundle.Split("/");
             foreach (string splitSearch in searchPersoID)
@@ -38,7 +36,6 @@ namespace SVS_ADVLoader
                 }
             }
         }
-
         public static bool SideLoadADV(OpenData openData, string bundle, string asset, bool isLowPolyADV, out Il2CppSystem.Collections.Generic.List<ScenarioCommand> lowPolyScenarios)
         {
             lowPolyScenarios = new();
@@ -47,7 +44,10 @@ namespace SVS_ADVLoader
             if (!ADVLoaderPlugin.GetSideloadADV()) return true;
             if (ADVLoaderPlugin.GetDisplayCurrentADV() && isLowPolyADV) ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Current NPC ADV: {asset}");
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Executing ADVLoader");
+            
+            if (isLowPolyADV) PreLowCharaADVInit(bundle);
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Personality: {personalityID}");
+            
             string filePath = "";
             string[] advDirectories = [];
             int type = GetAssetType(asset, bundle);
@@ -64,14 +64,14 @@ namespace SVS_ADVLoader
             {
                 filePath = Path.Combine(Paths.GameRootPath, ADVLoaderParam.GetADVFolders("common"));
                 if (!Directory.Exists(filePath)) return true;
-                advDirectories = Directory.GetDirectories(filePath, "*", SearchOption.TopDirectoryOnly);
+                advDirectories = [filePath];
                 if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"ADV Type: Common");
             }
             else
             {
                 filePath = Path.Combine(Paths.GameRootPath, ADVLoaderParam.GetADVFolders("other"));
                 if (!Directory.Exists(filePath)) return true;
-                advDirectories = Directory.GetDirectories(filePath, "*", SearchOption.TopDirectoryOnly);
+                advDirectories = [filePath];
                 if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"ADV Type: Other");
             }
 
@@ -197,6 +197,7 @@ namespace SVS_ADVLoader
                     if (lowPolyScenarios.Count > 0)
                     {
                         if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Custom NPC ADV Loaded");
+                        ADVLoaderParam.ResetADVFlags();
                         return false;
                     }
                 }
@@ -204,6 +205,7 @@ namespace SVS_ADVLoader
                 {
                     openData._data = new ScenarioData() { _list = new Il2CppReferenceArray<ScenarioCommand>(scenarioCommands) };
                     if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Custom ADV Loaded");
+                    ADVLoaderParam.ResetADVFlags();
                     return false;
                 }                
             }
@@ -310,12 +312,14 @@ namespace SVS_ADVLoader
                     }
             }
         }
-
         public static void CreateADVLoaderDirectory()
         {
-            string[] folders = [Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Chara/"), Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Common/")];
+            string[] folders = [Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Chara/"), 
+                                Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Common/"),
+                                Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Other/")];
             if (!Directory.Exists(folders[0])) Directory.CreateDirectory(folders[0]);
             if (!Directory.Exists(folders[1])) Directory.CreateDirectory(folders[1]);
+            if (!Directory.Exists(folders[2])) Directory.CreateDirectory(folders[2]);
         }
     }
 }

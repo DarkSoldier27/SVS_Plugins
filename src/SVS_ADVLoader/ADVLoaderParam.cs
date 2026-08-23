@@ -71,7 +71,6 @@ namespace SVS_ADVLoader
             if (_ADVFolderList.ContainsKey(folderType)) return _ADVFolderList[folderType];
             return "";
         }
-
         public static void SetFlag(string flagName, bool flagOn)
         {
             ADVLoaderPlugin.Log.LogInfo($"{_ADVFlagList.Count}");
