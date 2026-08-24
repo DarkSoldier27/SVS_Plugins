@@ -101,7 +101,7 @@ namespace SVS_ADVLoader
                 if (_extract_ADV.Value) ADVExtractor.GetExtractingKeyDown(__instance);
             }
 
-            [HarmonyPriority(300)]
+            [HarmonyPriority(800)]
             [HarmonyPrefix]
             [HarmonyPatch(typeof(TextScenario), nameof(TextScenario.LoadFile))]
             public static void PreLoadFile(TextScenario __instance, string bundle, string asset)
