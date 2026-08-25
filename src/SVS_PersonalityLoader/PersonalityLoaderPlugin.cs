@@ -1,17 +1,14 @@
-﻿using System.IO;
+﻿using ADV;
 using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
-using Il2CppSystem.Collections.Generic;
-using Manager;
-using SV;
-using SV.Chara;
 using SV.Config;
-using SV.Talk;
+
 namespace PersonalityLoader
 {
     [BepInPlugin(GUID, DisplayName, Version)]
+    [BepInDependency("DS27.SVS.ADVLoader", BepInDependency.DependencyFlags.SoftDependency)]
     public class PersonalityLoaderPlugin : BasePlugin
     {
         public const string DisplayName = Constants.Name;
@@ -21,187 +18,38 @@ namespace PersonalityLoader
         internal static new ManualLogSource Log;
         private static Harmony patchedHooks;
 
-        public static string PersonalityDirectory { get; } = Path.Combine(Paths.GameRootPath, "abdata\\etcetra\\list");
-
         public override void Load()
         {
             Log = base.Log;
-
+            GetADVLoaderPlugin(true);
             patchedHooks = Harmony.CreateAndPatchAll(typeof(Hooks));
         }
-        public override bool Unload()
+        public static bool GetADVLoaderPlugin(bool showWarning)
         {
-            patchedHooks?.UnpatchSelf();
-            return true;
+            if (IL2CPPChainloader.Instance.Plugins.TryGetValue("DS27.SVS.ADVLoader", out var advloader)) return true;
+            else
+            {
+                if (showWarning) Log.Log(LogLevel.Message, "SVS_PersonalityLoader missing dependency: SVS_ADVLoader. Loading ADVs from Hard mods");
+                return false;
+            }
         }
         internal static class Hooks
         {
-            private static int _tmpPerso_A;
-            private static int _tmpPerso_B;
-            private static int _tmpPerso_C;
-            private static int _tmpPerso_D;
-
-            private static int _tempID_A;
-            private static int _tempID_B;
-            private static int _tempID_C;
-            private static int _tempID_D;
-
-            private static int _tempIndexNPC_A;
-            //private static int _tempIndexNPC_B;
-            //private static int _tempIndexNPC_C;
-            //private static int _tempIndexNPC_D;
-
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(TalkTaskBase), nameof(TalkTaskBase.ADVStartInPlayer))]
-            public static void CustomPersonalityPreLoad(TalkTaskBase __instance, string _advAsset, int _charaID, int _category, int _playerAction, AI _player, AI _npc, AI _third, AI _fourth, AI _fifth, bool _isBackGround = true, bool _isResetClotheType = true)
-            {
-                _tmpPerso_A = -1;
-                _tmpPerso_B = -1;
-                _tmpPerso_C = -1;
-                _tmpPerso_D = -1;
-
-                _tempID_A = -1;
-                _tempID_B = -1;
-                _tempID_C = -1;
-                _tempID_D = -1;
-
-                _tempIndexNPC_A = -1;
-                //_tempIndexNPC_B = -1;
-                //_tempIndexNPC_C = -1;
-                //_tempIndexNPC_D = -1;
-
-                if (_npc != null)
-                {
-                    if ((_npc.charaData.parameter.personality > 15 && _npc.charaData.parameter.personality < 100) || _npc.charaData.parameter.personality > 104)
-                    {
-                        _tmpPerso_A = _npc.charaData.parameter.personality;
-                        _tempID_A = _npc.charaData.charasGameParam._Index_k__BackingField;
-                    }
-                }
-
-                if (_third != null)
-                {
-                    if ((_third.charaData.parameter.personality > 15 && _third.charaData.parameter.personality < 100) || _third.charaData.parameter.personality > 104)
-                    {
-                        _tmpPerso_B = _third.charaData.parameter.personality;
-                        _tempID_B = _third.charaData.charasGameParam._Index_k__BackingField;
-                    }
-                }
-
-                if (_fourth != null)
-                {
-                    if ((_fourth.charaData.parameter.personality > 15 && _fourth.charaData.parameter.personality < 100) || _fourth.charaData.parameter.personality > 104)
-                    {
-                        _tmpPerso_C = _fourth.charaData.parameter.personality;
-                        _tempID_C = _fourth.charaData.charasGameParam._Index_k__BackingField;
-                    }
-                }
-
-                if (_fifth != null)
-                {
-                    if ((_fifth.charaData.parameter.personality > 15 && _fifth.charaData.parameter.personality < 100) || _fifth.charaData.parameter.personality > 104)
-                    {
-                        _tmpPerso_D = _fifth.charaData.parameter.personality;
-                        _tempID_D = _fifth.charaData.charasGameParam._Index_k__BackingField;
-                    }
-                }
-
-                if (_npc != null || _third != null || _fourth != null || _fifth != null)
-                {
-                    var _sim = SimulationScene._instance.tempAIs;
-                    if (_sim != null)
-                    {
-                        int ind = 0;
-                        foreach (var _NPC in _sim)
-                        {
-                            if (_NPC.charaData.charasGameParam._Index_k__BackingField == _tempID_A)
-                            {
-                                SimulationScene._instance.tempAIs[ind]._charaData._chaCtrl_k__BackingField._data_k__BackingField.Parameter.personality = PersonalityLoaderFunctions.SetCustomPersonalityAnimation(PersonalityDirectory, _tmpPerso_A);
-                                _tempIndexNPC_A = ind;
-                            }
-                            if (_NPC.charaData.charasGameParam._Index_k__BackingField == _tempID_B)
-                            {
-                                SimulationScene._instance.tempAIs[ind]._charaData._chaCtrl_k__BackingField._data_k__BackingField.Parameter.personality = PersonalityLoaderFunctions.SetCustomPersonalityAnimation(PersonalityDirectory, _tmpPerso_B);
-                                //_tempIndexNPC_B = ind; // BUG? _tempIndexNPC_A is used for everything below
-                            }
-                            if (_NPC.charaData.charasGameParam._Index_k__BackingField == _tempID_C)
-                            {
-                                SimulationScene._instance.tempAIs[ind]._charaData._chaCtrl_k__BackingField._data_k__BackingField.Parameter.personality = PersonalityLoaderFunctions.SetCustomPersonalityAnimation(PersonalityDirectory, _tmpPerso_C);
-                                //_tempIndexNPC_C = ind; // BUG? _tempIndexNPC_A is used for everything below
-                            }
-                            if (_NPC.charaData.charasGameParam._Index_k__BackingField == _tempID_D)
-                            {
-                                SimulationScene._instance.tempAIs[ind]._charaData._chaCtrl_k__BackingField._data_k__BackingField.Parameter.personality = PersonalityLoaderFunctions.SetCustomPersonalityAnimation(PersonalityDirectory, _tmpPerso_D);
-                                //_tempIndexNPC_D = ind; // BUG? _tempIndexNPC_A is used for everything below
-                            }
-                            ind++;
-                        }
-                    }
-                }
-            }
-
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(TalkTaskBase), nameof(TalkTaskBase.ADVStartInPlayer))]
-            public static void CustomPersonalityPostLoad(TalkTaskBase __instance, string _advAsset, int _charaID, int _category, int _playerAction, AI _player, AI _npc, AI _third, AI _fourth, AI _fifth, bool _isBackGround = true, bool _isResetClotheType = true)
-            {
-                if ((_tmpPerso_A > 15 && _tmpPerso_A < 100) || _tmpPerso_A > 104)
-                {
-                    SimulationScene._instance.tempAIs[_tempIndexNPC_A]._charaData._chaCtrl_k__BackingField._data_k__BackingField.Parameter.personality = _tmpPerso_A;
-                    //_tmpPerso_A = -1;
-                }
-                if ((_tmpPerso_B > 15 && _tmpPerso_B < 100) || _tmpPerso_B > 104)
-                {
-                    SimulationScene._instance.tempAIs[_tempIndexNPC_A]._charaData._chaCtrl_k__BackingField._data_k__BackingField.Parameter.personality = _tmpPerso_B;
-                    //_tmpPerso_B = -1;
-                }
-                if ((_tmpPerso_C > 15 && _tmpPerso_C < 100) || _tmpPerso_C > 104)
-                {
-                    SimulationScene._instance.tempAIs[_tempIndexNPC_A]._charaData._chaCtrl_k__BackingField._data_k__BackingField.Parameter.personality = _tmpPerso_C;
-                    //_tmpPerso_C = -1;
-                }
-                if ((_tmpPerso_D > 15 && _tmpPerso_D < 100) || _tmpPerso_D > 104)
-                {
-                    SimulationScene._instance.tempAIs[_tempIndexNPC_A]._charaData._chaCtrl_k__BackingField._data_k__BackingField.Parameter.personality = _tmpPerso_D;
-                    //_tmpPerso_D = -1;
-                }
-            }
-
             //Game Voice Setting
             [HarmonyPostfix]
             [HarmonyPatch(typeof(VoiceSetting), nameof(VoiceSetting.Init))]
             public static void CreateCustomPersonalityVoiceSetting(VoiceSetting __instance)
             {
-                if (Game.expIDCharaDic == null) return;
-
-                if (Game.expIDCharaDic.Count != 0)
-                {
-                    List<int> _persoKeys = new List<int>();
-                    foreach (var ID in Game.expIDCharaDic)
-                    {
-                        if (ID.Key > 99)
-                        {
-                            if (!_persoKeys.Contains(ID.Key)) _persoKeys.Add(ID.Key);
-                        }
-                    }
-
-                    var _personalities = Voice.InfoTable;
-                    if (_personalities == null) return;
-
-                    var _num = __instance._table.Count + 3;
-                    foreach (var _perso in _persoKeys)
-                    {
-                        if (_perso > 99)
-                        {
-                            if (_personalities.ContainsKey(_perso))
-                            {
-                                __instance.Create(_num, _perso, _personalities[_perso].Personality);
-                                Log.LogInfo($"Created Voice Setting for: {_personalities[_perso].Personality} ID:{_perso}");
-                                _num++;
-                            }
-                        }
-                    }
-                }
+                PersonalityLoader.CreatePersoanlityVoiceSetting(__instance);
             }
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(AnimationController), nameof(AnimationController.Initialize), typeof(byte), typeof(int))]
+            public static void SetAnimCtrlIfMissing(AnimationController __instance, byte sex, ref int personality)
+            {
+                personality = PersonalityLoader.SetAnimationCtrlIfMissing(sex, personality);
+            }
+
         }
     }
 }
