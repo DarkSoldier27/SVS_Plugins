@@ -34,16 +34,17 @@ namespace SVS_ADVLoader
                 }
             }
         }
-        public static void SetAnimationIfMissing(AnimationController animation, string motionID)
+        public static bool SetAnimationIfMissing(AnimationController animation, string motionID)
         {
-            if (animation is null) return;
+            if (animation is null) return true;
             if (int.TryParse(motionID, out int id))
             {
                 if (!animation._params._dictionary.ContainsKey(id))
                 {
+                    if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo("Invalid animation ID, searching for new one...");
                     var animLoader = ADVLoaderParam.GetAnimationList();
                     if (animLoader.ContainsKey(id))
-                    {   
+                    {
                         animation._params._dictionary.Add(id,
                         new AnimationController.StateParameter(new TableData.Info()
                         {
@@ -72,9 +73,11 @@ namespace SVS_ADVLoader
                             UseRandomSpeed = animLoader[id].UseRandomSpeed
                         });
                     }
-                    if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo("Loading new animation for ADV");
+                    else return false;
+                    if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo("New animation added");
                 }
             }
+            return true;
         }
     }
 }

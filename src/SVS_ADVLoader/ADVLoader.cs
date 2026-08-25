@@ -18,15 +18,26 @@ namespace SVS_ADVLoader
         {
             if (scenario is null) return;
             if (ADVLoaderPlugin.GetDisplayCurrentADV()) ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Current ADV: {asset}");
-            if (scenario.CurrentHeroine != null) personalityID = scenario.CurrentHeroine.personality;
-            else personalityID = -1;
-            if (scenario._currentChara is not null)
+            if (scenario.CurrentHeroine != null)
             {
-                if (scenario._currentChara.AnimationController is not null)
+                if (scenario._currentChara is not null)
                 {
-                    animationController = scenario._currentChara.AnimationController;
+                    personalityID = scenario.CurrentHeroine.personality;
+                    if (scenario._currentChara.AnimationController is not null)
+                    {
+                        animationController = scenario._currentChara.AnimationController;
+                        if (animationController._params is null)
+                        {
+                            if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"AnimCtrl params null found, trying to initilaize");
+                            if (scenario.CurrentHeroine.parameter.sex == 1 && scenario.CurrentHeroine.personality > 15) animationController.Initialize(scenario.CurrentHeroine.parameter.sex, 0);
+                            if (scenario.CurrentHeroine.parameter.sex == 0 && (scenario.CurrentHeroine.personality < 100 && scenario.CurrentHeroine.personality > 103)) animationController.Initialize(scenario.CurrentHeroine.parameter.sex, 100);
+                        }
+                    }
+                    else if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Chara Animation Controler is null");
                 }
-            }
+            } 
+            else personalityID = -1;
+            
             ADVLoaderParam.ResetADVFlags();
         }
         public static void GetLowCharaPersonalityFromBundleName(string bundle)
@@ -44,6 +55,11 @@ namespace SVS_ADVLoader
                     }
                 }
             }
+        }
+
+        public static void SetAnimCtrl(AnimationController animCtrl)
+        {
+            animationController = animCtrl;
         }
         public static bool SideLoadADV(OpenData openData, string bundle, string asset, bool isLowPolyADV, out Il2CppSystem.Collections.Generic.List<ScenarioCommand> lowPolyScenarios)
         {
@@ -187,7 +203,13 @@ namespace SVS_ADVLoader
                         }
                     }
                     scenarioCommands[index].Hash = scenarioCommands[index].GetHashCode();
-                    if (scenarioCommands[index]._command == Command.Motion) ADVLoaderAnimationHandler.SetAnimationIfMissing(animationController, scenarioCommands[index]._args[1]);
+                    if (scenarioCommands[index]._command == Command.Motion)
+                    {
+                        if (!ADVLoaderAnimationHandler.SetAnimationIfMissing(animationController, scenarioCommands[index]._args[1]))
+                        {
+                            scenarioCommands[index]._args[1] = "0";
+                        }
+                    } 
                     sceneCount++;
                 }
                 else

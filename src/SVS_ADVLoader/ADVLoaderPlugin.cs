@@ -97,7 +97,7 @@ namespace SVS_ADVLoader
             [HarmonyPriority(800)]
             [HarmonyPostfix]
             [HarmonyPatch(typeof(SimulationScene), nameof(SimulationScene.Update))]
-            public static void SetupADV(SimulationScene __instance)
+            public static void ExtractADV(SimulationScene __instance)
             {
                 if (_extract_ADV.Value) ADVExtractor.GetExtractingKeyDown(__instance);
             }
