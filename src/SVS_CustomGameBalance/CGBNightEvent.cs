@@ -1,4 +1,4 @@
-using Manager;
+﻿using Manager;
 using SaveData;
 using SV;
 using SVS_Detour;
@@ -9,11 +9,13 @@ namespace SVS_CustomGameBalance
 {
     internal class CGBNightEvent
     {
-        private static Random _rnd = new Random();
+        private static readonly Random _rnd = new Random();
         private static Dictionary<int, int[]> _nightVisitCandidates = new();
 
-        public static void GetNightEventCharacters()
+        public static void SetNightEventCharacter()
         {
+            if (!CustomGameBalancePlugin.GetDetourPlugin(false)) return;
+            if (!CustomGameBalancePlugin.GetIsNightEventActive()) return;
             if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"**************************");
             if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Night Event Initialization");
             if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"**************************");
@@ -45,7 +47,6 @@ namespace SVS_CustomGameBalance
                         int playRate = 0;
 
                         bool sexVisit = false;
-                        //bool playVisit = false;
 
                         int virtueLv = charaNPC.Value.gameParameter.LvChastity;
                         if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Chara Virtue: {virtueLv}");
@@ -74,7 +75,11 @@ namespace SVS_CustomGameBalance
                                 {
                                     if (SexVisitCondition_Trait(charaNPC.Value, charaPC))
                                     {
-                                        sexVisit = true;
+                                        if (CustomGameBalancePlugin.GetNormalVirtueBalance())
+                                        {
+                                            if (lovePoints > 10) sexVisit = true;
+                                        }
+                                        else sexVisit = true;
                                     }
                                 }
                                 break;
@@ -110,13 +115,16 @@ namespace SVS_CustomGameBalance
                                 }
                                 break;
                         }
-                        //Males don't have ADV, they won't visit until this is fixed.
-                        if (!_nightVisitCandidates.ContainsKey(charaNPC.Key) && charaNPC.Value.parameter.sex == 1) _nightVisitCandidates.Add(charaNPC.Key, [0, 0]);
+                        //Check dependency for ADVLoader to fix the Male ADVs, else only add female characters for the night visit
+                        if (!_nightVisitCandidates.ContainsKey(charaNPC.Key) && CustomGameBalancePlugin.GetADVLoaderPlugin(false)) _nightVisitCandidates.Add(charaNPC.Key, [0, 0]);
+                        else if (!_nightVisitCandidates.ContainsKey(charaNPC.Key) && charaNPC.Value.parameter.sex == 1) _nightVisitCandidates.Add(charaNPC.Key, [0, 0]);
+
+                        if (!CustomGameBalancePlugin.GetADVLoaderPlugin(false) && charaNPC.Value.parameter.sex == 0) sexVisit = false;
 
                         if (friendPoints > 10)
                         {
                             playRate = FriendlyVisitRate(charaNPC.Value, charaPC);
-                            if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Play rate: {playRate}");                            
+                            if (CustomGameBalancePlugin.GetShowLog()) CustomGameBalancePlugin.Log.LogInfo($"Play rate: {playRate}");
                             if (_nightVisitCandidates.ContainsKey(charaNPC.Key)) _nightVisitCandidates[charaNPC.Key][0] = playRate;
                         }
 
@@ -133,8 +141,7 @@ namespace SVS_CustomGameBalance
             }
             NightEventChance();
         }
-
-        public static void NightEventChance()
+        private static void NightEventChance()
         {
             var nightVisitChance = CustomGameBalancePlugin.GetNightChance();
 

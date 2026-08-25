@@ -151,11 +151,11 @@ namespace SVS_CustomGameBalance
                 if (_actor.gameParameter.individuality.answer.Contains(27)) baseRate += 5;
 
                 //Check Mood
-                if (_actor.charasGameParam.state._State_k__BackingField == StateParameter.StateKind.UPLIFT) baseRate += 4;
-                if (_actor.charasGameParam.state._State_k__BackingField == StateParameter.StateKind.EARNESTNESS) baseRate += 8;
-                if (_actor.charasGameParam.state._State_k__BackingField == StateParameter.StateKind.ANGER) baseRate -= 16;
-                if (_actor.charasGameParam.state._State_k__BackingField == StateParameter.StateKind.DISAPPOINTMENT) baseRate -= 8;
-                if (_actor.charasGameParam.state._State_k__BackingField == StateParameter.StateKind.TENSION) baseRate -= 4;
+                if (_actor.charasGameParam.state.State == StateParameter.StateKind.UPLIFT) baseRate += 4;
+                if (_actor.charasGameParam.state.State == StateParameter.StateKind.EARNESTNESS) baseRate += 8;
+                if (_actor.charasGameParam.state.State == StateParameter.StateKind.ANGER) baseRate -= 16;
+                if (_actor.charasGameParam.state.State == StateParameter.StateKind.DISAPPOINTMENT) baseRate -= 8;
+                if (_actor.charasGameParam.state.State == StateParameter.StateKind.TENSION) baseRate -= 4;
 
                 //Multi and Division
                 if (_actor.gameParameter.individuality.answer.Contains(2))//Bad with Guys
