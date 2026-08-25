@@ -12,6 +12,7 @@ namespace SVS_ADVLoader
 {
     internal class ADVLoader
     {
+        private static AnimationController animationController;
         private static int personalityID = -1;
         public static void PreADVLoadInit(TextScenario scenario, string bundle, string asset)
         {
@@ -19,8 +20,16 @@ namespace SVS_ADVLoader
             if (ADVLoaderPlugin.GetDisplayCurrentADV()) ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Current ADV: {asset}");
             if (scenario.CurrentHeroine != null) personalityID = scenario.CurrentHeroine.personality;
             else personalityID = -1;
+            if (scenario._currentChara is not null)
+            {
+                if (scenario._currentChara.AnimationController is not null)
+                {
+                    animationController = scenario._currentChara.AnimationController;
+                }
+            }
+            ADVLoaderParam.ResetADVFlags();
         }
-        public static void PreLowCharaADVInit(string bundle)
+        public static void GetLowCharaPersonalityFromBundleName(string bundle)
         {
             string[] searchPersoID = bundle.Split("/");
             foreach (string splitSearch in searchPersoID)
@@ -45,7 +54,7 @@ namespace SVS_ADVLoader
             if (ADVLoaderPlugin.GetDisplayCurrentADV() && isLowPolyADV) ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Current NPC ADV: {asset}");
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Executing ADVLoader");
             
-            if (isLowPolyADV) PreLowCharaADVInit(bundle);
+            if (isLowPolyADV) GetLowCharaPersonalityFromBundleName(bundle);
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Personality: {personalityID}");
             
             string filePath = "";
@@ -178,6 +187,7 @@ namespace SVS_ADVLoader
                         }
                     }
                     scenarioCommands[index].Hash = scenarioCommands[index].GetHashCode();
+                    if (scenarioCommands[index]._command == Command.Motion) ADVLoaderAnimationHandler.SetAnimationIfMissing(animationController, scenarioCommands[index]._args[1]);
                     sceneCount++;
                 }
                 else
@@ -199,8 +209,7 @@ namespace SVS_ADVLoader
                     }
                     if (lowPolyScenarios.Count > 0)
                     {
-                        if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Custom NPC ADV Loaded");
-                        ADVLoaderParam.ResetADVFlags();
+                        if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Custom NPC ADV Loaded");                     
                         return false;
                     }
                 }
@@ -208,7 +217,6 @@ namespace SVS_ADVLoader
                 {
                     openData._data = new ScenarioData() { _list = new Il2CppReferenceArray<ScenarioCommand>(scenarioCommands) };
                     if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Custom ADV Loaded");
-                    ADVLoaderParam.ResetADVFlags();
                     return false;
                 }                
             }
@@ -317,9 +325,10 @@ namespace SVS_ADVLoader
         }
         public static void CreateADVLoaderDirectory()
         {
-            string[] folders = [Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Chara/"), 
-                                Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Common/"),
-                                Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Other/")];
+            string[] folders = [Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Chara"), 
+                                Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Common"),
+                                Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/Scenario/Other"),
+                                Path.Combine(Paths.GameRootPath, "abdata/mods/ADVLoader/List")];
             if (!Directory.Exists(folders[0])) Directory.CreateDirectory(folders[0]);
             if (!Directory.Exists(folders[1])) Directory.CreateDirectory(folders[1]);
             if (!Directory.Exists(folders[2])) Directory.CreateDirectory(folders[2]);
