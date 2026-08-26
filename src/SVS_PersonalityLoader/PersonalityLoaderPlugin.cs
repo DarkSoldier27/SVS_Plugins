@@ -45,11 +45,10 @@ namespace PersonalityLoader
 
             [HarmonyPrefix]
             [HarmonyPatch(typeof(AnimationController), nameof(AnimationController.Initialize), typeof(byte), typeof(int))]
-            public static void SetAnimCtrlIfMissing(AnimationController __instance, byte sex, ref int personality)
+            public static void SetAnimCtrlForCustomPersonality(AnimationController __instance, byte sex, ref int personality)
             {
                 personality = PersonalityLoader.SetAnimationCtrlIfMissing(sex, personality);
             }
-
         }
     }
 }
