@@ -1,9 +1,7 @@
 ﻿using ADV;
 using BepInEx;
 using BepInEx.Logging;
-using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using SaveData;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -55,11 +53,6 @@ namespace SVS_ADVLoader
                     }
                 }
             }
-        }
-
-        public static void SetAnimCtrl(AnimationController animCtrl)
-        {
-            animationController = animCtrl;
         }
         public static bool SideLoadADV(OpenData openData, string bundle, string asset, bool isLowPolyADV, out Il2CppSystem.Collections.Generic.List<ScenarioCommand> lowPolyScenarios)
         {
@@ -250,7 +243,9 @@ namespace SVS_ADVLoader
             switch (names[0])
             {
                 case "a":
-                    if (bundle.Contains("common")) return 100;
+                    if (asset == "a_25_1") return 41;
+                    if (asset == "a_43_1") return 43;
+                    if (bundle.Contains("common")) return 100;                  
                     return 0;
                 case "abduction":
                     return 0;
@@ -290,6 +285,8 @@ namespace SVS_ADVLoader
                 case "o":
                     return 13;
                 case "p":
+                    if (asset == "p_25_1") return 41;
+                    if (asset == "p_43_1") return 44;
                     return 103;
                 case "pc":
                     return 200;
@@ -328,10 +325,6 @@ namespace SVS_ADVLoader
                         case "s_84": return 38;
                         case "s_85": return 39;
                         case "s_86": return 40;
-                        case "a_25_1": return 41;
-                        case "p_25_1": return 42;
-                        case "a_43_1": return 43;
-                        case "p_43_1": return 44;
                         case "timechange": return 45;
                         default:
                             if (asset.Contains("abductionreport")) return 400;
