@@ -34,7 +34,8 @@ namespace SVS_ADVLoader
             sr.Close();
             try
             {
-                return JsonSerializer.Deserialize<List<ScenarioParam>>(json);
+                var options = new JsonSerializerOptions { ReadCommentHandling = JsonCommentHandling.Skip};
+                return JsonSerializer.Deserialize<List<ScenarioParam>>(json, options);
             }
             catch (Exception ex)
             {
