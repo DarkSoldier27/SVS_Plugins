@@ -9,7 +9,6 @@ namespace SVS_MoreOutfits
     {
         public static Texture2D LoadSprite(int outfit, int type)
         {
-            //Assembly moreoutfits = Assembly.GetExecutingAssembly();
             string[] resourceOutfits;
 
             switch (outfit)
@@ -18,63 +17,72 @@ namespace SVS_MoreOutfits
                     resourceOutfits = [
                         "SVS_MoreOutfits.Resources.01_Weekend_default.png",
                         "SVS_MoreOutfits.Resources.01_Weekend_hovered.png",
-                        "SVS_MoreOutfits.Resources.01_Weekend_selected.png"];
+                        "SVS_MoreOutfits.Resources.01_Weekend_selected.png",
+                        "SVS_MoreOutfits.Resources.01_Weekend_inactive.png"];
                     break;
                     
                 case 1://Night
                     resourceOutfits = [
                         "SVS_MoreOutfits.Resources.02_Night_default.png",
                         "SVS_MoreOutfits.Resources.02_Night_hovered.png",
-                        "SVS_MoreOutfits.Resources.02_Night_selected.png"];
+                        "SVS_MoreOutfits.Resources.02_Night_selected.png",
+                        "SVS_MoreOutfits.Resources.02_Night_inactive.png"];
                     break;
                     
                 case 2://Lewd
                     resourceOutfits = [
                         "SVS_MoreOutfits.Resources.03_Lewd_default.png",
                         "SVS_MoreOutfits.Resources.03_Lewd_hovered.png",
-                        "SVS_MoreOutfits.Resources.03_Lewd_selected.png"];
+                        "SVS_MoreOutfits.Resources.03_Lewd_selected.png",
+                        "SVS_MoreOutfits.Resources.03_Lewd_inactive.png"];
                     break;
 
                 case 3://Costume
                     resourceOutfits = [
                         "SVS_MoreOutfits.Resources.04_Costume_default.png",
                         "SVS_MoreOutfits.Resources.04_Costume_hovered.png",
-                        "SVS_MoreOutfits.Resources.04_Costume_selected.png"];
+                        "SVS_MoreOutfits.Resources.04_Costume_selected.png",
+                        "SVS_MoreOutfits.Resources.04_Costume_inactive.png"];
                     break;
                     
                 case 4://Sports
                     resourceOutfits = [
                         "SVS_MoreOutfits.Resources.05_Sports_default.png",
                         "SVS_MoreOutfits.Resources.05_Sports_hovered.png",
-                        "SVS_MoreOutfits.Resources.05_Sports_selected.png"];
+                        "SVS_MoreOutfits.Resources.05_Sports_selected.png",
+                        "SVS_MoreOutfits.Resources.05_Sports_inactive.png"];
                     break;
-                    
+
                 case 5://Bath
                     resourceOutfits = [
                         "SVS_MoreOutfits.Resources.06_Bath_default.png",
                         "SVS_MoreOutfits.Resources.06_Bath_hovered.png",
-                        "SVS_MoreOutfits.Resources.06_Bath_selected.png"];
+                        "SVS_MoreOutfits.Resources.06_Bath_selected.png",
+                        "SVS_MoreOutfits.Resources.06_Bath_inactive.png"];
                     break;
 
                 case 6://Camping
                     resourceOutfits = [
                         "SVS_MoreOutfits.Resources.07_Camping_default.png",
                         "SVS_MoreOutfits.Resources.07_Camping_hovered.png",
-                        "SVS_MoreOutfits.Resources.07_Camping_selected.png"];
+                        "SVS_MoreOutfits.Resources.07_Camping_selected.png",
+                        "SVS_MoreOutfits.Resources.07_Camping_inactive.png"];
                     break;
 
                 case 7://Home
                     resourceOutfits = [
                         "SVS_MoreOutfits.Resources.08_Home_default.png",
                         "SVS_MoreOutfits.Resources.08_Home_hovered.png",
-                        "SVS_MoreOutfits.Resources.08_Home_selected.png"];
+                        "SVS_MoreOutfits.Resources.08_Home_selected.png",
+                        "SVS_MoreOutfits.Resources.08_Home_inactive.png"];
                     break;
 
                 default:
                     resourceOutfits = [
                         "SVS_MoreOutfits.Resources.00_Unused_default.png",
                         "SVS_MoreOutfits.Resources.00_Unused_hovered.png",
-                        "SVS_MoreOutfits.Resources.00_Unused_selected.png"];
+                        "SVS_MoreOutfits.Resources.00_Unused_selected.png",
+                        "SVS_MoreOutfits.Resources.00_Unused_inactive.png"];
                     break;
             }
 

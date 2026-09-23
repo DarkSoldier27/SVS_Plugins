@@ -1,18 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using BepInEx;
+﻿using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using Character;
 using CharacterCreation;
-using CharacterCreation.UI;
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using SaveData;
 using SV;
 using SV.CoordeSelectScene;
-using TMPro;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+
 namespace SVS_MoreOutfits
 {
     [BepInPlugin(GUID, DisplayName, Version)]
@@ -25,35 +25,36 @@ namespace SVS_MoreOutfits
         internal static new ManualLogSource Log;
         //private static Harmony patchedHooks;
         private static ConfigEntry<int> maxOutfits { get; set; }
-
+        
+        private static ConfigEntry<bool> _disable_MoreOutfits;
         private static ConfigEntry<bool> changePCOutfit;
 
         private static ConfigEntry<bool> weekendOutfit;
         private static ConfigEntry<bool> nightOutfit;
-        private static ConfigEntry<bool> nightOutfitOptionOne;
-
         private static ConfigEntry<bool> lewdOutfit;
-
         private static ConfigEntry<bool> costumeOutfit;
+        private static ConfigEntry<bool> sportsOutfit;
+        private static ConfigEntry<bool> bathOutfit;
+        private static ConfigEntry<bool> campingOutfit;
+        private static ConfigEntry<bool> homeOutfit;
+
         private static ConfigEntry<GameDay> costumeDay;
         private static ConfigEntry<GamePeriod> costumePeriod;
 
-        private static ConfigEntry<bool> sportsOutfit;
 
         //internal static ConfigEntry<KeyCode> toggleKey_Test { get; set; }
 
         private static readonly List<string> outfitsList =
         [
-            "Weekend",
-            "Night",
-            "Lewd",
-            "Costume",
-            "Sports",
-            "Bath",
-            "Camping",
-            "Home",
-            "Outfit 12",
-            "Outfit 13",
+            "Weekend",//0
+            "Night",//1
+            "Lewd",//2
+            "Costume",//3
+            "Sports",//4
+            "Bath",//5
+            "Camping",//6
+            "Home",//7
+            "Swimsuit 2",//8
             "Outfit 14",
             "Outfit 15",
             "Outfit 16",
@@ -65,17 +66,19 @@ namespace SVS_MoreOutfits
             // Plugin startup logic
             Log = base.Log;
 
-            maxOutfits = Config.Bind("Outfits", "Set Outfit Amount", 8, new ConfigDescription("Set the Max amount of outfits for all characters. Any extra outfit above the default value (7) will not have conditions, in other words, NPCs will not use them", new AcceptableValueRange<int>(3, 17), new ConfigurationManagerAttributes { Order = 19 }));
+            maxOutfits = Config.Bind("Outfits", "Set Outfit Amount", 8, new ConfigDescription("DO NOT CHANGE THIS! unless you know what you are doing\nSet the Max amount of outfits for all characters.", new AcceptableValueRange<int>(3, 17), new ConfigurationManagerAttributes { IsAdvanced = true, Order = 20 }));
 
-            changePCOutfit = Config.Bind("Outfits", "Change PC Outfits", false, new ConfigDescription("PC will change into custom outfits automatically", null, new ConfigurationManagerAttributes { Order = 18 }));
+            _disable_MoreOutfits = Config.Bind("Outfits", "Disable More Outfits", false, new ConfigDescription("Disables this mod and characters will only use the default 3 outfits.\nDisabling individual outfits is recommended, otherwise it may cause incompatibility issues with other mods that uses Custom Outfits.", null, new ConfigurationManagerAttributes { Order = 19 }));
 
             weekendOutfit = Config.Bind("Outfits", "Use Weekend Outfit", true, new ConfigDescription("Characters will use their weekend Outfits durin Saturday and Sunday", null, new ConfigurationManagerAttributes { Order = 17 }));
             nightOutfit = Config.Bind("Outfits", "Use Night Outfit", true, new ConfigDescription("Characters will use their Night Outfits, they will change during the evening", null, new ConfigurationManagerAttributes { Order = 16 }));
             lewdOutfit = Config.Bind("Outfits", "Use Lewd Outfit", true, new ConfigDescription("Characters will use their Lewd Outfits when get a horny fortune ", null, new ConfigurationManagerAttributes { Order = 15 }));
             costumeOutfit = Config.Bind("Outfits", "Use Costume", false, new ConfigDescription("Characters will use a costume on the day and period specify. Note: This does not override the job or swimsuit outfits, those outfits take priority over this one", null, new ConfigurationManagerAttributes { Order = 14 }));
-            sportsOutfit = Config.Bind("Outfits", "Use Sports Outfits", false, new ConfigDescription("Characters will use their sport outfits on the day and period specify. Note: This does not override the swimsuit outfit, that outfit take priority over this one", null, new ConfigurationManagerAttributes { Order = 13 }));
+            sportsOutfit = Config.Bind("Outfits", "Use Sports Outfits", false, new ConfigDescription("Characters will use their sport outfits", null, new ConfigurationManagerAttributes { Order = 13 }));
+            bathOutfit = Config.Bind("Outfits", "Use Bath Outfits", false, new ConfigDescription("Characters will use their Bath outfits", null, new ConfigurationManagerAttributes { Browsable = false,Order = 12 }));
+            campingOutfit = Config.Bind("Outfits", "Use Camping Outfits", false, new ConfigDescription("Characters will use their Camping outfits", null, new ConfigurationManagerAttributes { Browsable = false, Order = 11 }));
+            homeOutfit = Config.Bind("Outfits", "Use Home Outfits", false, new ConfigDescription("Characters will use their Home outfits", null, new ConfigurationManagerAttributes {Browsable = false, Order = 10 }));
 
-            nightOutfitOptionOne = Config.Bind("Outfits Settings", "Night Outfit only at Night", false, new ConfigDescription("Characters will use their Night Outfits only at night", null, new ConfigurationManagerAttributes { Order = 10 }));
             costumeDay = Config.Bind("Outfits Settings", "Set Costume Day", GameDay.None,
             new ConfigDescription("Set the day when the costume will be use", null, new ConfigurationManagerAttributes { Order = 9 }));
             costumePeriod = Config.Bind("Outfits Settings", "Set Costume Period", GamePeriod.Morning | GamePeriod.Midday | GamePeriod.Evening | GamePeriod.Night,
@@ -107,26 +110,35 @@ namespace SVS_MoreOutfits
             Evening = 1 << 2,
             Night = 1 << 3,
         }
+
         public static int GetMaxOutfits()
         {
             return maxOutfits.Value;
         }
-        public static bool[] GetOptions()
+        public static List<string> GetCustomOufitList()
         {
-            bool[] options = [
-                changePCOutfit.Value,
+            return outfitsList;
+        }
+        public static bool GetDisableCustomOutfits()
+        {
+            return _disable_MoreOutfits.Value;
+        }
+        /// <summary>
+        /// Returns outfit is on. [0] Weekend, [1] Night, [2] Lewd, [3] Costume, [4] Sport, [5] Bath, [6] Camping, [7] Home.
+        /// </summary>
+        /// <returns></returns>
+        public static bool[] GetUseOutfit()
+        {
+            return [
                 weekendOutfit.Value,
                 nightOutfit.Value,
                 lewdOutfit.Value,
                 costumeOutfit.Value,
-                sportsOutfit.Value];
-            return options;
-        }
-
-        public static bool[] GetExtraOptions()
-        {
-            bool[] extraOptions = [nightOutfitOptionOne.Value];
-            return extraOptions;
+                sportsOutfit.Value,
+                bathOutfit.Value,
+                campingOutfit.Value,
+                homeOutfit.Value
+                ];
         }
 
         public static ValueTuple<int, bool[]> GetCostumeDayAndPeriod()
@@ -176,59 +188,46 @@ namespace SVS_MoreOutfits
         internal static class Hooks
         {
             [HarmonyPostfix]
-            [HarmonyPatch(typeof(SimulationScene), nameof(SimulationScene.Start))]
-            public static void GetChangeOfClothesList(SimulationScene __instance)
-            {
-                MoreOutfits.CreateOldChangeOfClothesList();
-            }
-
-            [HarmonyPostfix]
             [HarmonyPatch(typeof(HumanCustom), nameof(HumanCustom.Start))]
             public static void CreateOutfitsSlotsMaker(HumanCustom __instance)
             {
-                if (maxOutfits.Value > 3) MoreOutfits.CreateNewOutfitIcons(outfitsList, maxOutfits.Value);
+                if (maxOutfits.Value > 3) MoreOutfitsUI.CreateNewOutfitIcons(outfitsList, maxOutfits.Value);
             }
 
             [HarmonyPrefix] //On Postfix, toggles don't work
             [HarmonyPatch(typeof(CoordeSelect), nameof(CoordeSelect.Initialize))]
             public static void CreateOutfitsSlotsSimulation(CoordeSelect __instance)
             {
-                if (maxOutfits.Value > 3) MoreOutfits.CreateNewOutfitIcons(outfitsList, maxOutfits.Value);
+                if (maxOutfits.Value > 3) MoreOutfitsUI.CreateNewOutfitIcons(outfitsList, maxOutfits.Value);
+            }
+
+            [HarmonyPostfix] 
+            [HarmonyPatch(typeof(CoordeSelect), nameof(CoordeSelect.SetOpenCloseEvent))]
+            public static void DisplayOutfitsSlotsSimulation(CoordeSelect __instance, bool open)
+            {
+                if (open) MoreOutfitsUI.DisplayCharaCoordinates(__instance);
             }
 
             [HarmonyPrefix] //Load Character with new outfits
             [HarmonyPatch(typeof(HumanData), nameof(HumanData.Copy))]
-            public static void IncreaseCharaOutfits(HumanData __instance, HumanData dst, HumanData src)
+            public static void IncreaseCharaOutfits(HumanData dst, HumanData src)
             {
-                if (dst.Coordinates.Count != maxOutfits.Value)
-                {
-                    Il2CppReferenceArray<HumanDataCoordinate> moreCoordinate = new Il2CppReferenceArray<HumanDataCoordinate>(maxOutfits.Value);
-                    for (int i = 0; i < maxOutfits.Value; i++)
-                    {
-                        if (i >= dst.Coordinates.Count) moreCoordinate[i] = new(dst.Coordinates[0]);
-                        else moreCoordinate[i] = dst.Coordinates[i];
-                    }
-                    dst.Coordinates = moreCoordinate;
-                }
+                MoreOutfits.IncreaseCharaCoordinateSlot(dst, src);
             }
 
-            [HarmonyPrefix] //Used when adding a character into the main game, otherwise the other method works fine.
+            [HarmonyPriority(800)]
+            [HarmonyPrefix]
             [HarmonyPatch(typeof(HumanData), nameof(HumanData.SetCoordinateBytes))]
-            public static void ForceIncreaseCharaOutfits(HumanData __instance)
+            public static void SetCharaCoordinate(HumanData __instance, Il2CppStructArray<byte> data)
             {
-                if (__instance != null)
-                {
-                    if (__instance.Coordinates.Count != maxOutfits.Value)
-                    {
-                        Il2CppReferenceArray<HumanDataCoordinate> moreCoordinate = new Il2CppReferenceArray<HumanDataCoordinate>(maxOutfits.Value);
-                        for (int i = 0; i < maxOutfits.Value; i++)
-                        {
-                            if (i >= __instance.Coordinates.Count) moreCoordinate[i] = new(__instance.Coordinates[0]);
-                            else moreCoordinate[i] = __instance.Coordinates[i];
-                        }
-                        __instance.Coordinates = moreCoordinate;
-                    }
-                }
+                MoreOutfits.SetCharaCoordinates(__instance, data, false);
+            }
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(HumanData), nameof(HumanData.SetCoordinateBytes))]
+            public static void CheckCoordBytePost(HumanData __instance, Il2CppStructArray<byte> data)
+            {
+                MoreOutfits.SetCharaCoordinates(__instance, data, true);
             }
 
             [HarmonyPostfix]
@@ -245,200 +244,23 @@ namespace SVS_MoreOutfits
             [HarmonyPatch(typeof(CoordinateTypeChange), nameof(CoordinateTypeChange.ChangeType))]
             public static void DisplayOutfitName(CoordinateTypeChange __instance, int type)
             {
-                if (__instance._human.data.Coordinates.Count > __instance._coordinateTypeNames.Count)
-                {
-                    if (__instance._coordinateTypeNames.Count < 3)
-                    {
-                        var names = new Il2CppStringArray(__instance._human.data.Coordinates.Count)
-                        {
-                            //Create array for JP languaje.
-                            [0] = "私服",
-                            [1] = "役職服",
-                            [2] = "水着"
-                        };
-
-                        int number = 0;
-                        for (int i = 0; i < __instance._human.data.Coordinates.Count; i++)
-                        {
-                            if (i >= 3)
-                            {
-                                names[i] = outfitsList[number];
-                                number++;
-                            }
-                        }
-                        __instance._coordinateTypeNames = names;
-                    }
-                    else
-                    {
-                        var names = new Il2CppStringArray(__instance._human.data.Coordinates.Count);
-
-                        int number = 0;
-                        for (int i = 0; i < __instance._human.data.Coordinates.Count; i++)
-                        {
-                            if (i >= __instance._coordinateTypeNames.Count)
-                            {
-                                names[i] = outfitsList[number];
-                                number++;
-                            }
-                            else names[i] = __instance._coordinateTypeNames[i];
-                        }
-                        __instance._coordinateTypeNames = names;
-                    }
-                }
-            }
-
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(CoordinateCopyFace), nameof(CoordinateCopyFace.UpdateCustomUI))]
-            public static void CoordCopyFace(CoordinateCopyFace __instance)
-            {
-                if (__instance._human == null) return;
-
-                if (__instance._human.data.Coordinates.Count != __instance._ddDstCoordeType.TMP_Dropdown.options.Count)
-                {
-                    int number = 0;
-                    for (int i = 0; i < __instance._human.data.Coordinates.Count; i++)
-                    {
-                        if (i < 3) continue;
-                        TMP_Dropdown.OptionData newOption = new();
-                        newOption.m_Text = outfitsList[number];
-                        newOption.text = outfitsList[number];
-                        __instance._ddDstCoordeType.TMP_Dropdown.options.Add(newOption);
-                        __instance._ddSrcCoordeType.TMP_Dropdown.options.Add(newOption);
-                        number++;
-                    }
-                }
-            }
-
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(CoordinateCopyBody), nameof(CoordinateCopyBody.UpdateCustomUI))]
-            public static void CoordCopyBody(CoordinateCopyBody __instance)
-            {
-                if (__instance._human == null) return;
-
-                if (__instance._human.data.Coordinates.Count != __instance._ddDstCoordeType.TMP_Dropdown.options.Count)
-                {
-                    int number = 0;
-                    for (int i = 0; i < __instance._human.data.Coordinates.Count; i++)
-                    {
-                        if (i < 3) continue;
-                        TMP_Dropdown.OptionData newOption = new();
-                        newOption.m_Text = outfitsList[number];
-                        newOption.text = outfitsList[number];
-                        __instance._ddDstCoordeType.TMP_Dropdown.options.Add(newOption);
-                        __instance._ddSrcCoordeType.TMP_Dropdown.options.Add(newOption);
-                        number++;
-                    }
-                }
-            }
-
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(CoordinateCopyHair), nameof(CoordinateCopyHair.UpdateCustomUI))]
-            public static void CoordCopyHair(CoordinateCopyHair __instance)
-            {
-                if (__instance._human == null) return;
-
-                if (__instance._human.data.Coordinates.Count != __instance._ddDstCoordeType.TMP_Dropdown.options.Count)
-                {
-                    int number = 0;
-                    for (int i = 0; i < __instance._human.data.Coordinates.Count; i++)
-                    {
-                        if (i < 3) continue;
-                        TMP_Dropdown.OptionData newOption = new();
-                        newOption.m_Text = outfitsList[number];
-                        newOption.text = outfitsList[number];
-                        __instance._ddDstCoordeType.TMP_Dropdown.options.Add(newOption);
-                        __instance._ddSrcCoordeType.TMP_Dropdown.options.Add(newOption);
-                        //__instance._ddDstCoordeType.TMP_Dropdown.RefreshShownValue();
-                        number++;
-                    }
-                }
-            }
-
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(CoordinateCopyClothes), nameof(CoordinateCopyClothes.UpdateCustomUI))]
-            public static void CoordCopyClothes(CoordinateCopyClothes __instance)
-            {
-                if (__instance._human == null) return;
-
-                if (__instance._human.data.Coordinates.Count != __instance._ddDstCoordeType.TMP_Dropdown.options.Count)
-                {
-                    int number = 0;
-                    for (int i = 0; i < __instance._human.data.Coordinates.Count; i++)
-                    {
-                        if (i < 3) continue;
-                        TMP_Dropdown.OptionData newOption = new();
-                        newOption.m_Text = outfitsList[number];
-                        newOption.text = outfitsList[number];
-                        __instance._ddDstCoordeType.TMP_Dropdown.options.Add(newOption);
-                        __instance._ddSrcCoordeType.TMP_Dropdown.options.Add(newOption);
-                        number++;
-                    }
-                }
+                MoreOutfitsUI.DisplayOutfits(__instance);
             }
 
             [HarmonyPostfix]
-            [HarmonyPatch(typeof(CoordinateCopyAccessory), nameof(CoordinateCopyAccessory.UpdateCustomUI))]
-            public static void CoordCopyAccessory(CoordinateCopyAccessory __instance)
+            [HarmonyPatch(typeof(CustomDropdown), nameof(CustomDropdown.SetOptionCoordinateTypeNames))]
+            public static void NewDropdown(CustomDropdown __instance)
             {
-                if (__instance._human == null) return;
-
-                if (__instance._human.data.Coordinates.Count != __instance._ddDstCoordeType.TMP_Dropdown.options.Count)
-                {
-                    int number = 0;
-                    for (int i = 0; i < __instance._human.data.Coordinates.Count; i++)
-                    {
-                        if (i < 3) continue;
-                        TMP_Dropdown.OptionData newOption = new();
-                        newOption.m_Text = outfitsList[number];
-                        newOption.text = outfitsList[number];
-                        __instance._ddDstCoordeType.TMP_Dropdown.options.Add(newOption);
-                        __instance._ddSrcCoordeType.TMP_Dropdown.options.Add(newOption);
-                        number++;
-                    }
-                }
+                MoreOutfitsUI.AddOutfitsToDropdown(__instance);
             }
 
-            [HarmonyPrefix]
+            [HarmonyPriority(800)]
+            [HarmonyPostfix]
             [HarmonyPatch(typeof(ThinkingManager), nameof(ThinkingManager.GetChangeOfClothesNum))]
-            public static void SetOutfitSelection(Actor _actor, bool _isStart, int _timezone)
+            public static int ChangeClothesPerPeriodPost(int __result, Actor _actor, bool _isStart, int _timezone)
             {
-                if (_timezone >= 0)
-                {
-                    MoreOutfits.SetDailyOutfit(_actor, _isStart, _timezone, maxOutfits.Value);
-                }
+                return MoreOutfits.ChangeOutfits(_actor, _isStart, _timezone, __result);                
             }
-
-            /*[HarmonyPostfix]
-            [HarmonyPatch(typeof(ThinkingManager), nameof(ThinkingManager.GetChangeOfClothesNum))]
-            public static int ChangeClothesPerPeriodPost(int __result,Actor _actor, bool _isStart, int _timezone)
-            {
-                if (_timezone < 0)
-                {
-                    //Log.LogInfo($"Change into Coordinate:{__result}");
-                }
-                return __result;
-            }*/
-
-            //Doesn't work
-            /*[HarmonyPrefix]
-            [HarmonyPatch(typeof(HumanData), nameof(HumanData.SetCoordinateBytes))]
-            public static void CustomCharaTest(HumanData __instance, ref Il2CppStructArray<byte> data, Il2CppSystem.Version version)
-            {
-                Il2CppSystem.Collections.Generic.List<Il2CppStructArray<byte>> list = MessagePack.MessagePackSerializer.Deserialize<Il2CppSystem.Collections.Generic.List<Il2CppStructArray<byte>>>(data);
-
-                //Reinitialize the array with the new length
-                __instance.Coordinates = new Il2CppReferenceArray<HumanDataCoordinate>(list.Count);
-                for (int i = 0; i < list.Count; i++)
-                {
-                    if (__instance.Coordinates != null) __instance.Coordinates[i] = new HumanDataCoordinate();
-                }
-
-                //Load all the coordinates
-                for (int i = 0; i < list.Count; i++)
-                {
-                    __instance.Coordinates?[i].LoadBytes(list[i], version);
-                }
-            }*/
         }
     }
 }
