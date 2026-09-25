@@ -42,7 +42,7 @@ namespace PersonalityLoader
         }
         public static int SetAnimationCtrlIfMissing(byte sex, int personality)
         {
-            if (sex == 0 && (personality < 100 && personality > 103)) return 100;
+            if (sex == 0 && (personality < 100 || personality > 103)) return 100;
             if (sex == 1 && personality > 15) return 0;
             return personality;
         }
