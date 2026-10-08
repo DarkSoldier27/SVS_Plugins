@@ -40,6 +40,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVS_ADVLoader", "src\SVS_AD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVS_CustomLogic", "src\SVS_CustomLogic\SVS_CustomLogic.csproj", "{2F18C34F-A6E3-4F04-85C2-3BE8008F846F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVS_MoreActions", "src\SVS_MoreActions\SVS_MoreActions.csproj", "{30709B06-8C8C-74EB-D81F-09B0BA739543}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
