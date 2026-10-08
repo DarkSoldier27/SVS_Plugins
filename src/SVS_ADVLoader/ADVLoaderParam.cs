@@ -116,6 +116,7 @@ namespace SVS_ADVLoader
                     _ADVFlagList[key] = false;
                 }
             }
+            if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Reseting ADV Flags...");
         }
         public static Dictionary<int, AnimationController.StateParameter> GetAnimationList()
         {

@@ -34,6 +34,10 @@ namespace SVS_ADVLoader
                     }
                 }
             }
+            else if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.R))
+            {
+                ADVBatchExtract();
+            }
         }
         private static void ExtractADV(TextScenario scenario, bool fromPath)
         {
@@ -81,7 +85,7 @@ namespace SVS_ADVLoader
                     } 
                 }
             }
-            if (assetName != "" && extractedText != "") WriteToFile(extractedText, assetName);
+            if (assetName != "" && extractedText != "") WriteToFile(extractedText, assetName, true);
             isExtraction = false;
         }
         private static List<ScenarioCommand> GetScenarioListFromOpenData(string bundle, string asset)
@@ -98,7 +102,7 @@ namespace SVS_ADVLoader
                 ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Error! Asset does not exist in bundle");
             }
 
-            if (openData._data is not null)
+            if (openData._data != null)
             {
                 List<ScenarioCommand> commands = new List<ScenarioCommand>();
                 foreach (var sceneCommand in openData._data._list)
@@ -157,7 +161,7 @@ namespace SVS_ADVLoader
             }
             return "";
         } 
-        private static void WriteToFile(string extractedText, string name)
+        private static void WriteToFile(string extractedText, string name, bool addDate)
         {
             string folderPath = Path.Combine(Paths.GameRootPath, "UserData\\extractedADV");
             if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
@@ -165,9 +169,32 @@ namespace SVS_ADVLoader
             string fileName = name + "_" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".json";
             string extractedFile = Path.Combine(Paths.GameRootPath, "UserData\\extractedADV\\" + fileName);
             string fileAssetNameOnly = Path.Combine(Paths.GameRootPath, "UserData\\extractedADV\\" + name + ".json");
-            File.WriteAllText(extractedFile, extractedText);//Copy.
+            if (addDate) File.WriteAllText(extractedFile, extractedText);//Copy.
             File.WriteAllText(fileAssetNameOnly, extractedText);//Main file.
             ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Done Extracting ADV: {name}. File can be found in UserData/extractedADV");
+        }
+        public static void ADVBatchExtract()
+        {
+            isExtraction = true;
+            string[] files = ADVLoaderPlugin.GetAssetAndFilePath();
+            string bundlePath = Path.Combine(Paths.GameRootPath, "abdata/" + files[1]);
+            AssetBundle lowADVBundle2 = AssetBundle.LoadFromFile(bundlePath);
+
+            var assets = lowADVBundle2.GetAllAssetNames();
+            lowADVBundle2.Unload(true);
+            lowADVBundle2 = null;
+            if (assets != null)
+            {
+                foreach (var adv in assets)
+                {
+                    var assetName = Path.GetFileNameWithoutExtension(adv);
+                    ADVLoaderPlugin.Log.LogInfo($"{assetName}");
+                    var scenarios = GetScenarioListFromOpenData(files[1], assetName);
+                    var jsonText = GetJsonText(scenarios, assetName);
+                    WriteToFile(jsonText, assetName, false);
+                }
+            }
+            isExtraction = false;
         }
     }
 }

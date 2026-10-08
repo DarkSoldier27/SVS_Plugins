@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>SVS_ADVLoader</AssemblyName>
     <Product>Load ADV</Product>
-    <Version>1.0.0</Version>
+    <Version>1.1.5</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
     <RestoreAdditionalProjectSources>
@@ -13,6 +13,7 @@
       https://nuget.samboy.dev/v3/index.json
     </RestoreAdditionalProjectSources>
     <RootNamespace>SVS_ADVLoader</RootNamespace>
+    <Authors>https://github.com/DarkSoldier27/SVS_Plugins/tree/DS27</Authors>
   </PropertyGroup>
 
   <ItemGroup>

@@ -5,41 +5,33 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 namespace SVS_ADVLoader
 {
-    internal class ADVLoader
+    public class ADVLoader
     {
-        private static AnimationController animationController;
         private static int personalityID = -1;
-        public static void PreADVLoadInit(TextScenario scenario, string bundle, string asset)
+        public static void GetPersonalityIDFromScenario(TextScenario scenario)
         {
-            if (scenario is null) return;
-            if (ADVLoaderPlugin.GetDisplayCurrentADV()) ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Current ADV: {asset}");
+            if (scenario == null)
+            {
+                personalityID = -1;
+                return;
+            }
             if (scenario.CurrentHeroine != null)
             {
-                if (scenario._currentChara is not null)
-                {
-                    personalityID = scenario.CurrentHeroine.personality;
-                    if (scenario._currentChara.AnimationController is not null)
-                    {
-                        animationController = scenario._currentChara.AnimationController;
-                        if (animationController._params is null)
-                        {
-                            if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"AnimCtrl params null found, trying to initilaize");
-                            if (scenario.CurrentHeroine.parameter.sex == 1 && scenario.CurrentHeroine.personality > 15) animationController.Initialize(scenario.CurrentHeroine.parameter.sex, 0);
-                            if (scenario.CurrentHeroine.parameter.sex == 0 && (scenario.CurrentHeroine.personality < 100 && scenario.CurrentHeroine.personality > 103)) animationController.Initialize(scenario.CurrentHeroine.parameter.sex, 100);
-                        }
-                    }
-                    else if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Chara Animation Controler is null");
-                }
-            } 
+                personalityID = scenario.CurrentHeroine.personality;
+            }
             else personalityID = -1;
-            
-            ADVLoaderParam.ResetADVFlags();
         }
         public static void GetLowCharaPersonalityFromBundleName(string bundle)
         {
+            if (bundle == "")
+            {
+                personalityID = -1;
+                return;
+            }
             string[] searchPersoID = bundle.Split("/");
             foreach (string splitSearch in searchPersoID)
             {
@@ -57,17 +49,42 @@ namespace SVS_ADVLoader
         public static bool SideLoadADV(OpenData openData, string bundle, string asset, bool isLowPolyADV, out Il2CppSystem.Collections.Generic.List<ScenarioCommand> lowPolyScenarios)
         {
             lowPolyScenarios = new();
+            if (ADVManager.Instance == null) return true;
             if (openData is null && !isLowPolyADV) return true;
             if (ADVExtractor.IsExtraction()) return true;
             if (!ADVLoaderPlugin.GetSideloadADV()) return true;
-            if (ADVLoaderPlugin.GetDisplayCurrentADV() && isLowPolyADV) ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Current NPC ADV: {asset}");
-            if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Executing ADVLoader");
-            
+            bool assetExist = VerifyADVAsset(bundle, asset);
+            if (isLowPolyADV)
+            {
+                if (ADVLoaderPlugin.GetDisplayCurrentADV()) ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Current NPC ADV: {asset}");
+                else if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Current NPC ADV: {asset}");
+            }
+            else
+            {
+                if (ADVLoaderPlugin.GetDisplayCurrentADV()) ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Current ADV: {asset}");
+                else if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Current ADV: {asset}");
+            }
+
+            var advScene = ADVManager.Instance.gameObject.GetComponentInChildren<ADVScene>();
             if (isLowPolyADV) GetLowCharaPersonalityFromBundleName(bundle);
+            else 
+            {
+                if (advScene != null)
+                {
+                    if (advScene._scenario != null)
+                    {
+                        GetPersonalityIDFromScenario(advScene._scenario);
+                    }
+                    else return true;
+                }
+                else return true;
+            }
+
+            if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Executing ADVLoader");
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Personality: {personalityID}");
             
-            string filePath = "";
-            string[] advDirectories = [];
+            string filePath;
+            string[] advDirectories;
             int type = GetAssetType(asset, bundle);
 
             //Get the type of the ADV (Character, Common or Other)
@@ -96,6 +113,11 @@ namespace SVS_ADVLoader
             if (advDirectories.Length == 0)
             {
                 ADVLoaderPlugin.Log.LogInfo($"Could not find custom ADV folders. ADV will load normally");
+                if (!assetExist && !isLowPolyADV)
+                {
+                    SetErrorADV(openData, asset);
+                    return false;
+                }
                 return true;
             }
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Found custom ADV folders");
@@ -111,6 +133,11 @@ namespace SVS_ADVLoader
             if (advFiles.Length == 0)
             {
                 ADVLoaderPlugin.Log.LogInfo($"Could not find custom ADV file. ADV will load normally");
+                if (!assetExist && !isLowPolyADV)
+                {
+                    SetErrorADV(openData, asset);
+                    return false;
+                }
                 return true;
             }
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Found ADV files for {asset}");
@@ -149,6 +176,11 @@ namespace SVS_ADVLoader
             if (scenarioList.Count == 0)
             {
                 ADVLoaderPlugin.Log.LogInfo($"Failed to deserialize files");
+                if (!assetExist && !isLowPolyADV)
+                {
+                    SetErrorADV(openData, asset);
+                    return false;
+                }
                 return true;
             }
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Deserialization DONE");
@@ -170,7 +202,6 @@ namespace SVS_ADVLoader
                     advAsset = scenario.Key;
                     break;
                 }
-
             }
             if (advAsset == "") advAsset = asset;
 
@@ -196,13 +227,20 @@ namespace SVS_ADVLoader
                         }
                     }
                     scenarioCommands[index].Hash = scenarioCommands[index].GetHashCode();
-                    if (scenarioCommands[index]._command == Command.Motion)
+                    switch (scenarioCommands[index]._command)
                     {
-                        if (!ADVLoaderAnimationHandler.SetAnimationIfMissing(animationController, scenarioCommands[index]._args[1]))
-                        {
-                            scenarioCommands[index]._args[1] = "0";
-                        }
-                    } 
+                        case Command.LowMotionPlay:
+
+                            break;
+                        case Command.Motion:
+                            if (!ADVLoaderAnimationHandler.SetAnimationIfMissing(advScene._scenario, scenarioCommands[index]._args[1]))
+                            {
+                                scenarioCommands[index]._args[1] = "0";
+                            }
+                            break;
+                        case Command.Expression:
+                            break;
+                    }
                     sceneCount++;
                 }
                 else
@@ -245,7 +283,11 @@ namespace SVS_ADVLoader
                 case "a":
                     if (asset == "a_25_1") return 41;
                     if (asset == "a_43_1") return 43;
-                    if (bundle.Contains("common")) return 100;                  
+                    if (bundle.Contains("common")) return 100;
+                    if (int.TryParse(names[1], out int actionID))
+                    {
+                        if (actionID > 2) return 600;
+                    }
                     return 0;
                 case "abduction":
                     return 0;
@@ -347,6 +389,44 @@ namespace SVS_ADVLoader
             if (!Directory.Exists(folders[0])) Directory.CreateDirectory(folders[0]);
             if (!Directory.Exists(folders[1])) Directory.CreateDirectory(folders[1]);
             if (!Directory.Exists(folders[2])) Directory.CreateDirectory(folders[2]);
+        }
+
+        private static bool VerifyADVAsset(string bundle, string asset)
+        {
+            var filePath = Path.Combine(Paths.GameRootPath, "abdata/" + bundle);
+            if (File.Exists(filePath))
+            {
+                AssetBundle assetADV = AssetBundle.LoadFromFile(filePath);
+                if (assetADV != null)
+                {
+                    if (assetADV.Contains(asset))
+                    {
+                        ADVLoaderPlugin.Log.LogInfo($"Found asset in Bundle");
+                        assetADV.Unload(true);
+                        return true;
+                    } 
+                }
+            }
+            return false;
+        }
+
+        private static void SetErrorADV(OpenData openData, string assetName)
+        {
+            ScenarioCommand[] scenarioCommands = new ScenarioCommand[2];
+            Il2CppStringArray defArgs = new Il2CppStringArray(5);
+            defArgs[0] = "";
+            defArgs[1] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]";
+            defArgs[2] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]";
+            defArgs[3] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]";
+            defArgs[4] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]";
+           
+            scenarioCommands[0] = new ScenarioCommand()
+            { _version = 0, _multi = false, _command = Command.Text, _args = defArgs };
+            scenarioCommands[1] = new ScenarioCommand()
+            { _version = 0, _multi = false, _command = Command.Close, _args = new Il2CppStringArray(0) };
+
+            openData._data = new ScenarioData() { _list = new Il2CppReferenceArray<ScenarioCommand>(scenarioCommands) };
+            ADVLoaderPlugin.Log.LogInfo($"ERROR! Failed to load or Missing ADV file: {assetName}");
         }
     }
 }

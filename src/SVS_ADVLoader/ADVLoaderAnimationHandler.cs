@@ -1,13 +1,7 @@
 ﻿using ADV;
 using ADV.Serialization;
 using BepInEx;
-using SV;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace SVS_ADVLoader
@@ -34,9 +28,11 @@ namespace SVS_ADVLoader
                 }
             }
         }
-        public static bool SetAnimationIfMissing(AnimationController animation, string motionID)
+        public static bool SetAnimationIfMissing(TextScenario scenario, string motionID)
         {
-            if (animation is null) return true;
+            var animation = scenario.CurrentChara.AnimationController;
+            if (animation is null) return false;
+
             if (int.TryParse(motionID, out int id))
             {
                 if (!animation._params._dictionary.ContainsKey(id))

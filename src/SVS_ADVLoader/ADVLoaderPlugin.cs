@@ -1,14 +1,11 @@
 ﻿using ADV;
-using ADV.Commands.Game.LowChara;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
-using BepInEx.Unity.IL2CPP.Configuration;
 using HarmonyLib;
 using SV;
-using System.Collections.Generic;
-using UnityEngine;
+using System.Runtime.InteropServices;
 
 namespace SVS_ADVLoader
 {
@@ -18,7 +15,7 @@ namespace SVS_ADVLoader
     {
         public const string PluginName = "SVS_ADVLoader";
         public const string GUID = "DS27.SVS.ADVLoader";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "1.1.5";
 
         internal static new ManualLogSource Log;
         private static Harmony patchedHooks;
@@ -102,23 +99,22 @@ namespace SVS_ADVLoader
                 if (_extract_ADV.Value) ADVExtractor.GetExtractingKeyDown(__instance);
             }
 
-            [HarmonyPriority(800)]
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(TextScenario), nameof(TextScenario.LoadFile))]
-            public static void PreLoadFile(TextScenario __instance, string bundle, string asset)
-            {
-                ADVLoader.PreADVLoadInit(__instance,bundle, asset);
-            }
-
-            [HarmonyPriority(300)]
+            [HarmonyPriority(200)]
+            [HarmonyWrapSafe]
             [HarmonyPrefix]
             [HarmonyPatch(typeof(OpenData), nameof(OpenData.Load), typeof(string), typeof(string))]
             public static bool ADVSideloader(OpenData __instance, string bundle, string asset)
             {
-                return ADVLoader.SideLoadADV(__instance, bundle, asset, false, out Il2CppSystem.Collections.Generic.List<ScenarioCommand> lowPolyScenarios);
+                if (!ADVLoader.SideLoadADV(__instance, bundle, asset, false, out Il2CppSystem.Collections.Generic.List<ScenarioCommand> lowPolyScenarios))
+                {
+                    ADVLoaderParam.ResetADVFlags();
+                    return false;
+                }
+                ADVLoaderParam.ResetADVFlags();
+                return true; 
             }
 
-            [HarmonyPriority(300)]
+            [HarmonyPriority(200)]
             [HarmonyPrefix]
             [HarmonyPatch(typeof(LowCharaADV), nameof(LowCharaADV.Load), typeof(string), typeof(string))]
             public static bool LowPolyADVSideloader(ref Il2CppSystem.Collections.Generic.List<ScenarioCommand> __result, string bundle, string asset)
