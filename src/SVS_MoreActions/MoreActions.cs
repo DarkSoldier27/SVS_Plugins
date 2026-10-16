@@ -1,36 +1,18 @@
 ﻿using ADV;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Manager;
+using SaveData;
 using SV;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
-using TMPro;
-using UnityEngine;
-using static Character.HumanDataGameParameter_SV;
 
 namespace SVS_MoreActions
 {
-    internal class MoreActions
-    {
-        private static GameObject commandZeroObj;
-        private static GameObject commandTwoObj;
+    public class MoreActions
+    {       
         private static Dictionary<int, MoreActionsParam.ActionParam> actionParamList = new();
-        private static List<string> commandNameList = new List<string>() 
-        {
-            "Let's talk",
-            "talk",
-            "Make a statement",
-            "Consult",
-            "That person",
-            "Let's be together",
-            "Ask",
-            "Skinship",
-            "Ask to move",
-            "weakness",
-            "other"
-        };
-        private static List<GameObject> adultsBtns = new List<GameObject>();
-        public static void AddActionIntoCommandMenu(CommandUI commandMenu)
+        public static Dictionary<int,ValueTuple<float,int>> ActionJudgeAnswers = new();
+        public static void AddActionFromList(CommandUI commandMenu)
         {
             var actionList = MoreActionsParam.DeserializeAction();
             if (actionList != null || actionList.Count > 0)
@@ -49,9 +31,9 @@ namespace SVS_MoreActions
                 int index = 53;
                 foreach (var actParam in actionList)
                 {
-                    if (actParam.CategoryID < commandNameList.Count)
+                    if (actParam.CategoryID < MoreActionUI.commandNameList.Count)
                     {
-                        CreateNewActionOnMenu(commandMenu, actParam);
+                        MoreActionUI.CreateNewActionOnMenu(commandMenu, actParam);
                         AddActionCost(actParam.ActionID, actParam.ActionTimeCost);
                         AddActionJudge(actParam.CategoryID, actParam.ActionID, actParam.BaseJudgeRates, actParam.JudgeRates);
                         AddFavorPoints(actParam);
@@ -65,106 +47,10 @@ namespace SVS_MoreActions
                     }
                     index++;
                 }
-                SetLewdActions(commandMenu);
+                MoreActionUI.SetLewdActions(commandMenu);
                 commandMenu._commandNos = nos;
             }
-        }
-        private static void CreateNewActionOnMenu(CommandUI commandMenu, MoreActionsParam.ActionParam actParam)
-        {
-            if (commandMenu == null) return;
-            string categoryName = commandNameList[actParam.CategoryID];
-            if (commandZeroObj == null)
-            {
-                var commandZeroRectTrans = commandMenu._commandList;
-                var categoryZero = commandZeroRectTrans.Find(commandNameList[0]);
-                if (categoryZero != null)
-                {
-                    var commandZero = categoryZero.Find("GameObject/btnCommand000");
-                    var commandTwo = categoryZero.Find("GameObject/btnCommand002");
-                    commandZeroObj = commandZero.gameObject;
-                    commandTwoObj = commandTwo.gameObject;
-                }
-            }
-            var commandsRectTrans = commandMenu._commandList;
-            var category = commandsRectTrans.Find(categoryName);
-            if (category == null)
-            {
-                CreateNewCategory(commandsRectTrans.gameObject, categoryName);
-            }
-
-            var selectionList = category.Find("GameObject");
-            if (selectionList != null)
-            {
-                CreateNewActionButton(commandMenu, selectionList, actParam.ActionName, actParam.ActionID, actParam.IsLewdAction);
-                AdjustActionSelection(selectionList, actParam.CategoryID);
-            }
-
-        }
-        private static void SetLewdActions(CommandUI commandMenu)
-        {
-            if (adultsBtns.Count > 0)
-            {
-                List<GameObject> gameObjList = new List<GameObject>();
-                for (int i = 0; i < commandMenu._adultButtons.Length; i++)
-                {
-                    gameObjList.Add(commandMenu._adultButtons[i]);
-                }
-                foreach (GameObject gameObj in adultsBtns)
-                {
-                    gameObjList.Add(gameObj);
-                }
-                Il2CppReferenceArray<GameObject> adults = new Il2CppReferenceArray<GameObject>(gameObjList.Count);
-                for (int i = 0; i < adults.Length; i++)
-                {
-                    adults[i] = gameObjList[i];
-                }
-                commandMenu._adultButtons = adults;
-            }
-        }
-        public static void CreateNewCategory(GameObject categoryListGameObj,string categoryName)
-        {
-            //MoreActionsPlugin.Log.LogInfo("Creating new category");
-        }
-        
-        public static void CreateNewActionButton(CommandUI commandMenu,Transform selectionListObj, string actionName, int actionID, bool isLewd)
-        {
-            if (selectionListObj.Find(actionName) != null) return;
-            if (commandZeroObj == null || commandTwoObj == null)
-            {
-                MoreActionsPlugin.Log.LogInfo("Could not find default action gameObject");
-                return;
-            }
-
-            int childObjCount = selectionListObj.childCount > 1 ? selectionListObj.childCount - 1 : 0;
-            float xLocalPos = 50 - (childObjCount * 10);
-            float yLocalPos = 23 - (childObjCount * 40);
-
-            GameObject actionObj;
-            if (isLewd) actionObj = UnityEngine.Object.Instantiate(commandTwoObj);
-            else actionObj = UnityEngine.Object.Instantiate(commandZeroObj);
-
-            actionObj.name = actionName;
-            var actionButtomCommand = actionObj.GetComponent<CommandButton>();
-            if (actionButtomCommand != null)
-            {
-                actionButtomCommand.Button.onClick.m_PersistentCalls.m_Calls[0].arguments.intArgument = actionID;
-            }
-
-            actionObj.transform.SetParent(selectionListObj);
-            var btnRect = actionObj.GetComponent<RectTransform>();
-            btnRect.localPosition = new Vector3(xLocalPos, yLocalPos, 0);
-            btnRect.localScale = new Vector3(1, 1, 1);//Reset Local scale
-            var btnText = actionObj.GetComponentInChildren<TextMeshProUGUI>();
-            if (btnText != null)
-            {
-                btnText.text = actionName;
-            }
-            if (isLewd)
-            {
-                adultsBtns.Add(actionObj);
-            }
-        }
-        
+        }         
         private static Il2CppSystem.Collections.Generic.List<float> SetJudgeBaseRates(Il2CppSystem.Collections.Generic.List<float> defaultBaseRates, List<float> judgeBaseRates)
         {
             Il2CppSystem.Collections.Generic.List<float> baseRates = new();
@@ -291,7 +177,13 @@ namespace SVS_MoreActions
                     });
                     break;
                 case 10:
-
+                    if (YesNoJudgeManager.Instance.talkAnswer.table.ContainsKey(actionID)) return;
+                    YesNoJudgeManager.Instance.talkAnswer.table.Add(actionID, new AnswerBaseDataParam()
+                    {
+                        ID = actionID,
+                        BaseRates = SetJudgeBaseRates(YesNoJudgeManager.Instance.talkAnswer.table[0].BaseRates, judgeBaseRates),
+                        Rates = SetJudgeRates(YesNoJudgeManager.Instance.talkAnswer.table[0].Rates, judgeRates)
+                    });
                     break;
                 case 11://EveryOne
                     if (YesNoJudgeManager.Instance.everyoneAnswer.table.ContainsKey(actionID)) return;
@@ -341,8 +233,7 @@ namespace SVS_MoreActions
                             Favourables = dataFavourables
                         });
                     }                  
-                }
-                
+                }               
             }
         }
         public static void AddMoodPoints(MoreActionsParam.ActionParam actParam)
@@ -379,20 +270,22 @@ namespace SVS_MoreActions
         }
         public static void JudgeAction(int commandID)
         {
-            if (!Enum.IsDefined(typeof(SimulationDefine.CommandNo), commandID))
+            var advScene = ADVManager.Instance.gameObject.GetComponentInChildren<ADVScene>();
+            if (advScene != null)
             {
-                YesNoJudgeManager.Instance.EachJudgment(commandID, 0);
-                int answerRate = (int)YesNoJudgeManager.Instance.ansInfo.rate;
-                int answerType = YesNoJudgeManager.Instance.ansInfo.ans;
-                var advScene = ADVManager.Instance.gameObject.GetComponentInChildren<ADVScene>();
-                if (advScene != null)
+                if (advScene._scenario != null)
                 {
-                    if (advScene._scenario != null)
+                    if (ActionJudgeAnswers.ContainsKey(commandID))
                     {
-                        if (MoreActionsPlugin.GetShowLog()) MoreActionsPlugin.Log.LogInfo($"Judge System: CommandID:{commandID} - Rate: {answerRate} - Answer type: {answerType}");
-                        advScene._scenario.CurrentHeroine.charasGameParam.judgeRate = answerRate;
-                        advScene._scenario.CurrentHeroine.charasGameParam.judgeAnswer = answerType;
+                        if (MoreActionsPlugin.GetShowLog()) MoreActionsPlugin.Log.LogInfo($"Judge System: CommandID:{commandID} - Rate: {ActionJudgeAnswers[commandID].Item1} - Answer type: {ActionJudgeAnswers[commandID].Item2}");
+                        advScene._scenario.CurrentHeroine.charasGameParam.judgeRate = (int)ActionJudgeAnswers[commandID].Item1;
+                        advScene._scenario.CurrentHeroine.charasGameParam.judgeAnswer = ActionJudgeAnswers[commandID].Item2;
                     }
+                    else 
+                    {
+                        advScene._scenario.CurrentHeroine.charasGameParam.judgeRate = 100;
+                        advScene._scenario.CurrentHeroine.charasGameParam.judgeAnswer = 0;
+                    }                  
                 }
             }
         }
@@ -417,99 +310,363 @@ namespace SVS_MoreActions
             }
             return valueID;
         }
-        private static void AdjustActionSelection(Transform transObj, int categoryID)
+        public static void OpenActionMenu(CommandUI commandMenu, Actor chara)
         {
-            float localX = 0;
-            float localY = 0;
-            var rectTrans = transObj.gameObject.GetComponent<RectTransform>();
-            if (rectTrans != null)
+            if (actionParamList.Count == 0) return;
+            foreach (var actParam in actionParamList)
             {
-                switch (categoryID)
+                if (actParam.Value.AdvanceOptions != null) ActionButtonDisplay(commandMenu, chara, actParam.Value);
+                if (actParam.Value.BaseJudgeRates.Count == 7) GetActionJudgeAnswer(actParam.Value.ActionID);
+            }
+        }
+        public static void GetActionJudgeAnswer(int actionID)
+        {
+            YesNoJudgeManager.Instance.EachJudgment(actionID, 0);
+            float answerRate = YesNoJudgeManager.Instance.ansInfo.rate;
+            int answerType = YesNoJudgeManager.Instance.ansInfo.ans;
+            if (answerRate == 0 & answerType == 0) answerRate = 100;
+            ValueTuple<float, int> rateAnswer;
+            rateAnswer.Item1 = answerRate;
+            rateAnswer.Item2 = answerType;
+            if (!ActionJudgeAnswers.ContainsKey(actionID)) ActionJudgeAnswers.Add(actionID, rateAnswer);
+            else if (ActionJudgeAnswers.ContainsKey(actionID)) ActionJudgeAnswers[actionID] = rateAnswer;
+        }
+        public static void ActionButtonDisplay(CommandUI commandMenu, Actor targetChara, MoreActionsParam.ActionParam actParam)
+        {
+            if (actParam.AdvanceOptions != null)
+            {
+                if (actParam.AdvanceOptions.IsButtonHidden)
                 {
-                    case 0:
-                        break;
-                    case 1:
-                        if (transObj.childCount > 23)
-                        {
-                            localX = 6 * (transObj.childCount - 23);
-                            localY = 40 * (transObj.childCount - 23);
-                            rectTrans.localPosition = new Vector3(localX, localY);
-                        }
-                        break;
-                    case 2:
-                        if (transObj.childCount > 21)
-                        {
-                            localX = 6 * (transObj.childCount - 21);
-                            localY = 40 * (transObj.childCount - 21);
-                            rectTrans.localPosition = new Vector3(localX, localY);
-                        }
-                        break;
-                    case 3:
-                        if (transObj.childCount > 19)
-                        {
-                            localX = 6 * (transObj.childCount - 19);
-                            localY = 40 * (transObj.childCount - 19);
-                            rectTrans.localPosition = new Vector3(localX, localY);
-                        }
-                        break;
-                    case 4:
-                        if (transObj.childCount > 17)
-                        {
-                            localX = 6 * (transObj.childCount - 17);
-                            localY = 40 * (transObj.childCount - 17);
-                            rectTrans.localPosition = new Vector3(localX, localY);
-                        }
-                        break;
-                    case 5:
-                        if (transObj.childCount > 15)
-                        {
-                            localX = 6 * (transObj.childCount - 15);
-                            localY = 40 * (transObj.childCount - 15);
-                            rectTrans.localPosition = new Vector3(localX, localY);
-                        }
-                        break;
-                    case 6:
-                        if (transObj.childCount > 13)
-                        {
-                            localX = 6 * (transObj.childCount - 13);
-                            localY = 40 * (transObj.childCount - 13);
-                            rectTrans.localPosition = new Vector3(localX, localY);
-                        }
-                        break;
-                    case 7:
-                        if (transObj.childCount > 11)
-                        {
-                            localX = 6 * (transObj.childCount - 11);
-                            localY = 40 * (transObj.childCount - 11);
-                            rectTrans.localPosition = new Vector3(localX, localY);
-                        }
-                        break;
-                    case 8:
-                        if (transObj.childCount > 9)
-                        {
-                            localX = 6 * (transObj.childCount - 9);
-                            localY = 40 * (transObj.childCount - 9);
-                            rectTrans.localPosition = new Vector3(localX, localY);
-                        }
-                        break;
-                    case 9:
-                        if (transObj.childCount > 6)
-                        {
-                            localX = 6 * (transObj.childCount - 6);
-                            localY = 40 * (transObj.childCount - 6);
-                            rectTrans.localPosition = new Vector3(localX, localY);
-                        }
-                        break;
-                    case 10:
-                        if (transObj.childCount > 6)
-                        {
-                            localX = 6 * (transObj.childCount - 6);
-                            localY = 40 * (transObj.childCount - 6);
-                            rectTrans.localPosition = new Vector3(localX, localY);
-                        }
-                        break;
+                    if (ActionButtonConditions(actParam, targetChara))
+                    {
+                        ShowButton(commandMenu, actParam, true);
+                    }
+                    else
+                    {
+                        ShowButton(commandMenu, actParam, false);
+                    }
                 }
             }
+
+        }
+        private static void ShowButton(CommandUI commandMenu, MoreActionsParam.ActionParam actParam, bool IsShow)
+        {
+            string categoryName = MoreActionUI.commandNameList[actParam.CategoryID];
+            var commandsRectTrans = commandMenu._commandList;
+            var category = commandsRectTrans.Find(categoryName);
+            var selectionList = category.Find("GameObject");
+            if (selectionList != null)
+            {
+                var actionObj = selectionList.Find(actParam.ActionName);
+                if (actionObj != null) actionObj.gameObject.SetActive(IsShow);
+            }
+        }
+        private static bool ActionButtonConditions(MoreActionsParam.ActionParam actParam, Actor targetChara)
+        {
+            var charaPC = GameChara.Player;
+            int trueCount = 0;
+            if (MoreActionsPlugin.GetShowLog()) MoreActionsPlugin.Log.LogInfo($"Action {actParam.ActionID}_{actParam.ActionName} Conditions {actParam.AdvanceOptions.ShowActionConditions.Count} - Meet All: {actParam.AdvanceOptions.NeedAllConditions}");
+            foreach (var condition in actParam.AdvanceOptions.ShowActionConditions)
+            {
+                if (MoreActionsPlugin.GetShowLog()) MoreActionsPlugin.Log.LogInfo($"Checking Condition: {condition.Key}");
+                string keyValue = condition.Key.ToLower();
+                switch (keyValue)
+                {
+                    case "trait":
+                        if (condition.Value.Count > 1)
+                        {
+                            int trait = int.TryParse(condition.Value[1], out int value) ? value : -2;
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.gameParameter.individuality.answer.Contains(trait)) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.gameParameter.individuality.answer.Contains(trait)) trueCount++;
+                        }
+                        break;
+                    case "htrait":
+                        if (condition.Value.Count > 1)
+                        {
+                            int trait = int.TryParse(condition.Value[1], out int value) ? value : -2;
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.gameParameter.preferenceH.answer.Contains(trait)) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.gameParameter.preferenceH.answer.Contains(trait)) trueCount++;
+                        }
+                        break;
+                    case "sex":
+                        if (condition.Value.Count > 1)
+                        {
+                            int sex = int.TryParse(condition.Value[1], out int value) ? value : -1;
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.parameter.sex == sex) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.parameter.sex == sex) trueCount++;
+                        }
+                        break;
+                    case "time":
+                        if (condition.Value.Count > 1)
+                        {
+                            int weekDay = -1;
+                            int period = -1;
+                            int gameWeekDay = Game.saveData.Week;
+                            if (int.TryParse(condition.Value[0], out int day))
+                            {
+                                weekDay = day;
+                            }
+                            else
+                            {
+                                switch (condition.Value[0].ToLower())
+                                {
+                                    case "monday": 
+                                        weekDay = 0;
+                                        break;
+                                    case "tuesday":
+                                        weekDay = 1;
+                                        break;
+                                    case "wesnesday":
+                                        weekDay = 2;
+                                        break;
+                                    case "thursday":
+                                        weekDay = 3;
+                                        break;
+                                    case "friday":
+                                        weekDay = 4;
+                                        break;
+                                    case "saturday":
+                                        weekDay = 5;
+                                        break;
+                                    case "sunday":
+                                        weekDay = 6;
+                                        break;
+                                }
+                            }
+                            if (int.TryParse(condition.Value[1], out int timePeriod))
+                            {
+                                period = timePeriod;
+                            }
+                            else
+                            {
+                                switch (condition.Value[1].ToLower())
+                                {
+                                    case "morning":
+                                        period = 0;
+                                        break;
+                                    case "midday":
+                                        period = 1;
+                                        break;
+                                    case "evening":
+                                        period = 2;
+                                        break;
+                                    case "night":
+                                        period = 3;
+                                        break;
+                                }
+                            }
+                            if (gameWeekDay == weekDay && period == GetTimeOfDay()) trueCount++;
+                        }
+                        break;
+                    case "love":
+                        if (condition.Value.Count > 2)
+                        {
+                            int checkValue = int.TryParse(condition.Value[2], out int value) ? value : 0;
+                            if (condition.Value[0].ToLower() == "pc" && GetFavorability(charaPC, condition.Value[1], targetChara.charasGameParam.Index, 0, checkValue)) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && GetFavorability(targetChara, condition.Value[1], charaPC.charasGameParam.Index, 0, checkValue)) trueCount++;
+                        }
+                        break;
+                    case "friend":
+                        if (condition.Value.Count > 2)
+                        {
+                            int checkValue = int.TryParse(condition.Value[2], out int value) ? value : 0;
+                            if (condition.Value[0].ToLower() == "pc" && GetFavorability(charaPC, condition.Value[1], targetChara.charasGameParam.Index, 1, checkValue)) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && GetFavorability(targetChara, condition.Value[1], charaPC.charasGameParam.Index, 1, checkValue)) trueCount++;
+                        }
+                        break;
+                    case "indifferent":
+                    case "distant":
+                        if (condition.Value.Count > 2)
+                        {
+                            int checkValue = int.TryParse(condition.Value[2], out int value) ? value : 0;
+                            if (condition.Value[0].ToLower() == "pc" && GetFavorability(charaPC, condition.Value[1], targetChara.charasGameParam.Index, 2, checkValue)) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && GetFavorability(targetChara, condition.Value[1], charaPC.charasGameParam.Index, 2, checkValue)) trueCount++;
+                        }
+                        break;
+                    case "hate":
+                        if (condition.Value.Count > 2)
+                        {
+                            int checkValue = int.TryParse(condition.Value[2], out int value) ? value : 0;
+                            if (condition.Value[0].ToLower() == "pc" && GetFavorability(charaPC, condition.Value[1], targetChara.charasGameParam.Index, 3, checkValue)) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && GetFavorability(targetChara, condition.Value[1], charaPC.charasGameParam.Index, 3, checkValue)) trueCount++;
+                        }
+                        break;
+                    case "virtue":
+                    case "chastity":
+                        if (condition.Value.Count > 1)
+                        {
+                            int virtue = int.TryParse(condition.Value[1], out int value) ? value : -1;
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.gameParameter.LvChastity == virtue) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.gameParameter.LvChastity == virtue) trueCount++;
+                        }
+                        break;
+                    case "job":
+                        if (condition.Value.Count > 1)
+                        {
+                            int jobID = int.TryParse(condition.Value[1], out int value) ? value : -1;
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.Job == jobID) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.Job == jobID) trueCount++;
+                        }
+                        break;
+                    case "personality":
+                        if (condition.Value.Count > 1)
+                        {
+                            int perID = int.TryParse(condition.Value[1], out int value) ? value : -1;
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.personality == perID) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.personality == perID) trueCount++;
+                        }
+                        break;
+                    case "sexualtarget":
+                        if (condition.Value.Count > 1)
+                        {
+                            int sexTarget = int.TryParse(condition.Value[1], out int value) ? value : -1;
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.gameParameter.sexualTarget == sexTarget) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.gameParameter.sexualTarget == sexTarget) trueCount++;
+                        }
+                        break;
+                    case "sociability":
+                        if (condition.Value.Count > 1)
+                        {
+                            int charaSocial = int.TryParse(condition.Value[1], out int value) ? value : -1;
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.gameParameter.LvSociability == charaSocial) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.gameParameter.sexualTarget == charaSocial) trueCount++;
+                        }
+                        break;
+                    case "fight":
+                    case "insult":
+                        if (condition.Value.Count > 1)
+                        {
+                            int fightStyle = int.TryParse(condition.Value[1], out int value) ? value : -1;
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.gameParameter.LvDefeat == fightStyle) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.gameParameter.LvDefeat == fightStyle) trueCount++;
+                        }
+                        break;
+                    case "virgin":
+                        if (condition.Value.Count > 1)
+                        {
+                            bool virgin = bool.Parse(condition.Value[1]);
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.gameParameter.isVirgin == virgin) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.gameParameter.isVirgin == virgin) trueCount++;
+                        }
+                        break;
+                    case "analvirgin":
+                        if (condition.Value.Count > 1)
+                        {
+                            bool virgin = bool.Parse(condition.Value[1]);
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.gameParameter.isAnalVirgin == virgin) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.gameParameter.isAnalVirgin == virgin) trueCount++;
+                        }
+                        break;
+                    case "malevirgin":
+                        if (condition.Value.Count > 1)
+                        {
+                            bool virgin = bool.Parse(condition.Value[1]);
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.gameParameter.isMaleVirgin == virgin) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.gameParameter.isMaleVirgin == virgin) trueCount++;
+                        }
+                        break;
+                    case "maleanalvirgin":
+                        if (condition.Value.Count > 1)
+                        {
+                            bool virgin = bool.Parse(condition.Value[1]);
+                            if (condition.Value[0].ToLower() == "pc" && charaPC.gameParameter.isMaleAnalVirgin == virgin) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && targetChara.gameParameter.isMaleAnalVirgin == virgin) trueCount++;
+                        }
+                        break;
+                    case "statconversation":
+                    case "statspeech":
+                        if (condition.Value.Count > 2)
+                        {
+                            int checkValue = int.TryParse(condition.Value[1], out int value) ? value : -1;
+                            if (condition.Value[0].ToLower() == "pc" && CompareValues(condition.Value[1], charaPC.charasGameParam.baseParameter.Conversation, checkValue)) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && CompareValues(condition.Value[1], targetChara.charasGameParam.baseParameter.Conversation, checkValue)) trueCount++;
+                        }
+                        break;
+                    case "statstamina":
+                    case "statstrength":
+                        if (condition.Value.Count > 2)
+                        {
+                            int checkValue = int.TryParse(condition.Value[1], out int value) ? value : -1;
+                            if (condition.Value[0].ToLower() == "pc" && CompareValues(condition.Value[1], charaPC.charasGameParam.baseParameter.Conversation, checkValue)) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && CompareValues(condition.Value[1], targetChara.charasGameParam.baseParameter.Conversation, checkValue)) trueCount++;
+                        }
+                        break;
+                    case "statstudy":
+                        if (condition.Value.Count > 2)
+                        {
+                            int checkValue = int.TryParse(condition.Value[1], out int value) ? value : -1;
+                            if (condition.Value[0].ToLower() == "pc" && CompareValues(condition.Value[1], charaPC.charasGameParam.baseParameter.Study, checkValue)) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && CompareValues(condition.Value[1], targetChara.charasGameParam.baseParameter.Study, checkValue)) trueCount++;
+                        }
+                        break;
+                    case "statliving":
+                        if (condition.Value.Count > 2)
+                        {
+                            int checkValue = int.TryParse(condition.Value[1], out int value) ? value : -1;
+                            if (condition.Value[0].ToLower() == "pc" && CompareValues(condition.Value[1], charaPC.charasGameParam.baseParameter.Living, checkValue)) trueCount++;
+                            if (condition.Value[0].ToLower() == "npc" && CompareValues(condition.Value[1], targetChara.charasGameParam.baseParameter.Living, checkValue)) trueCount++;
+                        }
+                        break;
+                    case "islover":
+                        if (charaPC.charasGameParam.memory.IsLoversContainsID(targetChara.charasGameParam.Index)) trueCount++;
+                        break;
+                }
+                if (!actParam.AdvanceOptions.NeedAllConditions && trueCount > 0) return true;
+            }
+            if (trueCount == actParam.AdvanceOptions.ShowActionConditions.Count) return true;
+            return false;
+        }
+
+        private static bool GetFavorability(Actor chara, string compareOperator, int charaID, int type, int checkValue)
+        {
+            if (type < 0 || type > 3) return false;
+            if (chara.charasGameParam.sensitivity.tableFavorabiliry.ContainsKey(charaID))
+            {
+                int favorValue = chara.charasGameParam.sensitivity.tableFavorabiliry[charaID].longSensitivityCounts[type];
+                return CompareValues(compareOperator, favorValue, checkValue);
+            }
+            return false;
+        }
+        private static bool CompareValues(string textOperator, float valueOne, float valuetwo)
+        {
+            switch (textOperator)
+            {
+                case "<":
+                    if (valueOne < valuetwo) return true;
+                    break;
+                case "<=":
+                    if (valueOne <= valuetwo) return true;
+                    break;
+                case "=":
+                    if (valueOne == valuetwo) return true;
+                    break;
+                case "!=":
+                    if (valueOne != valuetwo) return true;
+                    break;
+                case ">=":
+                    if (valueOne >= valuetwo) return true;
+                    break;
+                case ">":
+                    if (valueOne > valuetwo) return true;
+                    break;
+            }
+            return false;
+        }
+        public static int GetTimeOfDay()
+        {
+            if (SimulationManager.Instance is null) return -1;
+            switch (SimulationManager.Instance.Mode)
+            {
+                case SimulationManager.SimulationMode.RoomMorning_SimMorning: return 0;
+                case SimulationManager.SimulationMode.SimMorning: return 0;
+                case SimulationManager.SimulationMode.SimMorning_SimNoon: return 1;
+                case SimulationManager.SimulationMode.SimNoon: return 1;
+                case SimulationManager.SimulationMode.SimNoon_SimEvening: return 2;
+                case SimulationManager.SimulationMode.SimEvening: return 2;
+                case SimulationManager.SimulationMode.SimEvening_SimNight: return 3;
+                case SimulationManager.SimulationMode.SimNight: return 3;
+            }
+            return -1;
         }
     }
 }

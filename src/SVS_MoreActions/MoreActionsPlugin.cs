@@ -3,6 +3,7 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
+using SaveData;
 using SemanticVersioning;
 using SV;
 
@@ -33,7 +34,7 @@ namespace SVS_MoreActions
             patchedHooks = Harmony.CreateAndPatchAll(typeof(Hooks));
         }
 
-        public static bool GetADVLoaderPlugin(bool showWarning)
+        private static bool GetADVLoaderPlugin(bool showWarning)
         {
             if (IL2CPPChainloader.Instance.Plugins.TryGetValue("DS27.SVS.ADVLoader", out var advLoader))
             {
@@ -63,7 +64,7 @@ namespace SVS_MoreActions
             [HarmonyPatch(typeof(CommandUI), nameof(CommandUI.Start))]
             private static void StartPost(CommandUI __instance)
             {
-                MoreActions.AddActionIntoCommandMenu(__instance);
+                MoreActions.AddActionFromList(__instance);
             }
 
             [HarmonyPostfix]
@@ -74,8 +75,15 @@ namespace SVS_MoreActions
             }
 
             [HarmonyPostfix]
+            [HarmonyPatch(typeof(CommandUI), nameof(CommandUI.Open))]
+            private static void PostCommandOpen(CommandUI __instance, Actor _passive)
+            {
+                MoreActions.OpenActionMenu(__instance, _passive);
+            }
+
+            [HarmonyPostfix]
             [HarmonyPatch(typeof(NormalConditionFavourable), nameof(NormalConditionFavourable.Conditions))]
-            private static int TestNormCondFavorJudge(int __result, NormalConditionFavourable __instance)
+            private static int NormCondFavorJudge(int __result, NormalConditionFavourable __instance)
             {
                 return MoreActions.SetActionFavorMood(__instance, __result);
             }

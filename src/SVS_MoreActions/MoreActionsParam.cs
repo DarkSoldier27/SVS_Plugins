@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace SVS_MoreActions
 {
-    internal class MoreActionsParam
+    public class MoreActionsParam
     {
         public class ActionParam
         {
@@ -18,6 +18,7 @@ namespace SVS_MoreActions
             public List<float> BaseJudgeRates { get; set; } = new List<float>();
             public List<float> JudgeRates { get; set; } = new List<float>();
             public Dictionary<int, FavorMoodParam> FavorMoodParam { get; set; }
+            public ActionAdvanceOptionsParam AdvanceOptions { get; set; }
         }
         public class FavorMoodParam
         {
@@ -36,6 +37,21 @@ namespace SVS_MoreActions
             public int ID { get; set; }
             public Dictionary<int, List<int>> Moods { get; set; }
 
+        }
+        public class ActionAdvanceOptionsParam
+        {
+            public string[] ButtonSpritePath { get; set; }
+            public bool IsButtonHidden { get; set; } = false;
+            public bool NeedAllConditions { get; set; } = false;
+            public Dictionary<string, List<string>> ShowActionConditions { get; set; }
+
+        }
+        public class CategoryParam
+        {
+            public int ID { get; set; }
+            public string Name { get; set; }
+            public bool IsHidden { get; set; }
+            public string[] SpritesPath { get; set; }
         }
         public static List<ActionParam> DeserializeAction()
         {
