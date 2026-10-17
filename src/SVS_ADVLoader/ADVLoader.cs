@@ -12,6 +12,13 @@ namespace SVS_ADVLoader
     public class ADVLoader
     {
         private static int personalityID = -1;
+        public enum ScenarioTypeADV
+        {
+            None = 0,
+            Chara = 1,
+            Common = 2,
+            External = 3,
+        }
         public static void GetPersonalityIDFromScenario(TextScenario scenario)
         {
             if (scenario == null)
@@ -53,7 +60,6 @@ namespace SVS_ADVLoader
             if (openData is null && !isLowPolyADV) return true;
             if (ADVExtractor.IsExtraction()) return true;
             if (!ADVLoaderPlugin.GetSideloadADV()) return true;
-            bool assetExist = VerifyADVAsset(bundle, asset);
             if (isLowPolyADV)
             {
                 if (ADVLoaderPlugin.GetDisplayCurrentADV()) ADVLoaderPlugin.Log.Log(LogLevel.Message, $"Current NPC ADV: {asset}");
@@ -82,41 +88,44 @@ namespace SVS_ADVLoader
 
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Executing ADVLoader");
             if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"Personality: {personalityID}");
-            
-            string filePath;
-            string[] advDirectories;
-            int type = GetAssetType(asset, bundle);
 
-            //Get the type of the ADV (Character, Common or Other)
-            if (type > -1 && type < 30)
+            string filePath;
+            string[] advDirectories = [];
+
+            ScenarioTypeADV sceneType = GetAssetType(asset, bundle);
+            switch (sceneType)
             {
-                filePath = Path.Combine(Paths.GameRootPath, ADVLoaderParam.GetADVFolders("chara"));
-                if (!Directory.Exists(filePath)) return true;
-                advDirectories = Directory.GetDirectories(filePath, $"{personalityID}_*", SearchOption.TopDirectoryOnly);
-                if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"ADV Type: Chara");
-            }
-            else if (type > 30)
-            {
-                filePath = Path.Combine(Paths.GameRootPath, ADVLoaderParam.GetADVFolders("common"));
-                if (!Directory.Exists(filePath)) return true;
-                advDirectories = [filePath];
-                if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"ADV Type: Common");
-            }
-            else
-            {
-                filePath = Path.Combine(Paths.GameRootPath, ADVLoaderParam.GetADVFolders("other"));
-                if (!Directory.Exists(filePath)) return true;
-                advDirectories = [filePath];
-                if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"ADV Type: Other");
+                case ScenarioTypeADV.Chara:
+                    filePath = Path.Combine(Paths.GameRootPath, ADVLoaderParam.GetADVFolders("chara"));
+                    if (!Directory.Exists(filePath)) return true;
+                    advDirectories = Directory.GetDirectories(filePath, $"{personalityID}_*", SearchOption.TopDirectoryOnly);
+                    if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"ADV Type: Chara");
+                    break;
+                case ScenarioTypeADV.Common:
+                    filePath = Path.Combine(Paths.GameRootPath, ADVLoaderParam.GetADVFolders("common"));
+                    if (!Directory.Exists(filePath)) return true;
+                    advDirectories = [filePath];
+                    if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"ADV Type: Common");
+                    break;
+                case ScenarioTypeADV.None:
+                case ScenarioTypeADV.External:
+                    filePath = Path.Combine(Paths.GameRootPath, ADVLoaderParam.GetADVFolders("other"));
+                    if (!Directory.Exists(filePath)) return true;
+                    advDirectories = [filePath];
+                    if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo($"ADV Type: Other");
+                    break;
             }
 
             if (advDirectories.Length == 0)
             {
                 ADVLoaderPlugin.Log.LogInfo($"Could not find custom ADV folders. ADV will load normally");
-                if (!assetExist && !isLowPolyADV)
+                if (!isLowPolyADV)
                 {
-                    SetErrorADV(openData, asset);
-                    return false;
+                    if (!VerifyADVAsset(bundle, asset))
+                    {
+                        SetErrorADV(openData, asset, sceneType);
+                        return false;
+                    }                  
                 }
                 return true;
             }
@@ -133,10 +142,13 @@ namespace SVS_ADVLoader
             if (advFiles.Length == 0)
             {
                 ADVLoaderPlugin.Log.LogInfo($"Could not find custom ADV file. ADV will load normally");
-                if (!assetExist && !isLowPolyADV)
+                if (!isLowPolyADV)
                 {
-                    SetErrorADV(openData, asset);
-                    return false;
+                    if (!VerifyADVAsset(bundle, asset))
+                    {
+                        SetErrorADV(openData, asset, sceneType);
+                        return false;
+                    }
                 }
                 return true;
             }
@@ -176,10 +188,13 @@ namespace SVS_ADVLoader
             if (scenarioList.Count == 0)
             {
                 ADVLoaderPlugin.Log.LogInfo($"Failed to deserialize files");
-                if (!assetExist && !isLowPolyADV)
+                if (!isLowPolyADV)
                 {
-                    SetErrorADV(openData, asset);
-                    return false;
+                    if (!VerifyADVAsset(bundle, asset))
+                    {
+                        SetErrorADV(openData, asset, sceneType);
+                        return false;
+                    }
                 }
                 return true;
             }
@@ -230,7 +245,6 @@ namespace SVS_ADVLoader
                     switch (scenarioCommands[index]._command)
                     {
                         case Command.LowMotionPlay:
-
                             break;
                         case Command.Motion:
                             if (!ADVLoaderAnimationHandler.SetAnimationIfMissing(advScene._scenario, scenarioCommands[index]._args[1]))
@@ -275,108 +289,83 @@ namespace SVS_ADVLoader
             }
             return true;
         }
-        public static int GetAssetType(string asset, string bundle)
+        public static ScenarioTypeADV GetAssetType(string asset, string bundle)
         {
             string[] names = asset.Split('_');
             switch (names[0])
             {
                 case "a":
-                    if (asset == "a_25_1") return 41;
-                    if (asset == "a_43_1") return 43;
-                    if (bundle.Contains("common")) return 100;
+                    if (asset == "a_25_1") return ScenarioTypeADV.Common;
+                    if (asset == "a_43_1") return ScenarioTypeADV.Common;
+                    if (bundle.Contains("common")) return ScenarioTypeADV.Common;
                     if (int.TryParse(names[1], out int actionID))
                     {
-                        if (actionID > 2) return 600;
+                        if (actionID > 1) return ScenarioTypeADV.Common;
                     }
-                    return 0;
+                    return ScenarioTypeADV.Chara;
                 case "abduction":
-                    return 0;
                 case "all":
-                    return 1;
                 case "ask":
-                    return 2;
                 case "consult":
-                    return 3;
                 case "daily":
-                    return 4;
                 case "erotic":
-                    return 5;
                 case "h":
-                    return 6;
                 case "intro":
-                    return 7;
                 case "kiss":
-                    return 8;
                 case "love":
-                    return 9;
                 case "move":
-                    return 10;
+                    return ScenarioTypeADV.Chara;
                 case "n":
                     if (bundle.Contains("common"))
                     {
-                        if (asset.Contains("n_H")) return 102;
-                        return 101;
-                    } 
-                    return 11;
+                        if (asset.Contains("n_H")) return ScenarioTypeADV.Common;
+                        return ScenarioTypeADV.Common;
+                    }
+                    return ScenarioTypeADV.Chara;
                 case "no":
-                    return 12;
                 case "npc":
-                    return 0;
                 case "npcr":
-                    return 1;
                 case "o":
-                    return 13;
+                    return ScenarioTypeADV.Chara;
                 case "p":
-                    if (asset == "p_25_1") return 41;
-                    if (asset == "p_43_1") return 44;
-                    return 103;
                 case "pc":
-                    return 200;
+                    return ScenarioTypeADV.Common;
                 case "person":
-                    return 14;
                 case "r":
-                    return 15;
                 case "skinship":
-                    return 16;
                 case "special":
-                    return 17;
                 case "t":
-                    return 18;
                 case "talk":
-                    return 19;
                 case "talk2":
-                    return 20;
                 case "touch":
-                    return 21;
                 case "u":
-                    return 22;
                 case "w":
-                    return 23;
                 case "yn":
-                    return 24;
+                    return ScenarioTypeADV.Chara;
                 case "i":
-                    if (asset.Contains("i_a")) return 124;
-                    if (asset.Contains("i_p")) return 124;
-                    return 25;
+                    if (asset.Contains("i_a")) return ScenarioTypeADV.Common;
+                    if (asset.Contains("i_p")) return ScenarioTypeADV.Common;
+                    return ScenarioTypeADV.Chara;
                 case "e":
-                    return 26;
+                case "chara":
+                    return ScenarioTypeADV.Chara;
                 default:
                     switch (asset)
                     {
-                        case "s_83": return 37;
-                        case "s_84": return 38;
-                        case "s_85": return 39;
-                        case "s_86": return 40;
-                        case "timechange": return 45;
+                        case "s_83":
+                        case "s_84":
+                        case "s_85":
+                        case "s_86":
+                        case "timechange": return ScenarioTypeADV.Common;
                         default:
-                            if (asset.Contains("abductionreport")) return 400;
-                            if (asset.Contains("board")) return 500;
-                            if (asset.Contains("dayend")) return 50;
-                            if (asset.Contains("evaluation")) return 600;
-                            if (asset.Contains("morning")) return 60;
-                            if (asset.Contains("nightcrawling")) return 61;
-                            if (asset.Contains("nightlife")) return 62;
-                            return -1;
+                            if (asset.Contains("abductionreport")) return ScenarioTypeADV.Common;
+                            if (asset.Contains("board")) return ScenarioTypeADV.Common;
+                            if (asset.Contains("dayend")) return ScenarioTypeADV.Common;
+                            if (asset.Contains("evaluation")) return ScenarioTypeADV.Common;
+                            if (asset.Contains("morning")) return ScenarioTypeADV.Common;
+                            if (asset.Contains("nightcrawling")) return ScenarioTypeADV.Common;
+                            if (asset.Contains("nightlife")) return ScenarioTypeADV.Common;
+                            return ScenarioTypeADV.None;
                     }
             }
         }
@@ -390,43 +379,57 @@ namespace SVS_ADVLoader
             if (!Directory.Exists(folders[1])) Directory.CreateDirectory(folders[1]);
             if (!Directory.Exists(folders[2])) Directory.CreateDirectory(folders[2]);
         }
-
         private static bool VerifyADVAsset(string bundle, string asset)
         {
             var filePath = Path.Combine(Paths.GameRootPath, "abdata/" + bundle);
             if (File.Exists(filePath))
             {
+                if (ADVLoaderPlugin.GetShowLog()) ADVLoaderPlugin.Log.LogInfo("Verifying ADV Asset");
                 AssetBundle assetADV = AssetBundle.LoadFromFile(filePath);
                 if (assetADV != null)
                 {
                     if (assetADV.Contains(asset))
                     {
-                        ADVLoaderPlugin.Log.LogInfo($"Found asset in Bundle");
+                        ADVLoaderPlugin.Log.LogInfo($"Found asset [{asset}] in bundle");
                         assetADV.Unload(true);
                         return true;
                     } 
                 }
             }
+            ADVLoaderPlugin.Log.LogInfo($"ADV Asset [{asset}] not found in bundle");
             return false;
         }
-
-        private static void SetErrorADV(OpenData openData, string assetName)
+        private static void SetErrorADV(OpenData openData, string assetName, ScenarioTypeADV sceneType)
         {
+            string auxTextError = "";
+            switch (sceneType)
+            {
+                case ScenarioTypeADV.Chara:
+                    auxTextError = $"\nFor Personality ID: {personalityID}";
+                    break;
+                case ScenarioTypeADV.Common:
+                    auxTextError = $"\nFor ADV Type: Common";
+                    break;
+                case ScenarioTypeADV.None:
+                case ScenarioTypeADV.External:
+                    auxTextError = $"\nFor ADV Type: Other";
+                    break;
+            }
             ScenarioCommand[] scenarioCommands = new ScenarioCommand[2];
             Il2CppStringArray defArgs = new Il2CppStringArray(5);
             defArgs[0] = "";
-            defArgs[1] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]";
-            defArgs[2] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]";
-            defArgs[3] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]";
-            defArgs[4] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]";
-           
+            defArgs[1] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]{auxTextError}";
+            defArgs[2] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]{auxTextError}";
+            defArgs[3] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]{auxTextError}";
+            defArgs[4] = $"<color=\"red\">ERROR! <color=\"white\">Failed to load or Missing ADV file! [{assetName}]{auxTextError}";
+
             scenarioCommands[0] = new ScenarioCommand()
             { _version = 0, _multi = false, _command = Command.Text, _args = defArgs };
             scenarioCommands[1] = new ScenarioCommand()
             { _version = 0, _multi = false, _command = Command.Close, _args = new Il2CppStringArray(0) };
 
             openData._data = new ScenarioData() { _list = new Il2CppReferenceArray<ScenarioCommand>(scenarioCommands) };
-            ADVLoaderPlugin.Log.LogInfo($"ERROR! Failed to load or Missing ADV file: {assetName}");
+            ADVLoaderPlugin.Log.LogInfo($"ERROR! Failed to load or Missing ADV file: {assetName}{auxTextError}");
         }
     }
 }

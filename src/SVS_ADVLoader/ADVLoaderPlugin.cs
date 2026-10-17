@@ -15,7 +15,7 @@ namespace SVS_ADVLoader
     {
         public const string PluginName = "SVS_ADVLoader";
         public const string GUID = "DS27.SVS.ADVLoader";
-        public const string PluginVersion = "1.1.5";
+        public const string PluginVersion = "1.2";
 
         internal static new ManualLogSource Log;
         private static Harmony patchedHooks;
@@ -42,7 +42,6 @@ namespace SVS_ADVLoader
 
             _extract_ADV = Config.Bind("Extracting Tool", "Enable Extraction of ADV", false, new ConfigDescription("Can extract ADVs", null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 4 }));
             _extract_curretADVType = Config.Bind("Extracting Tool", "Extract current ADV type", ExtractionType.CharacterADV, new ConfigDescription("ADV that will be extracted from current ADV.\nNone: no ADV will be extracted.\nCharacter ADV: Only the current ADV of the character will be extracted.\nAll Loaded ADVs: Extracts all loaded ADVs for the current Scene", null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 2 }));
-            //_extract_FileFormat = Config.Bind("Extracting Tool", "Extrated file format", FileFormat.json, new ConfigDescription("Format of the extracted ADV", null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 2 }));
             _assetADV = Config.Bind("Extracting Tool", "ADV Asset Name", "", new ConfigDescription("Name of the asset to extract", null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 1 }));
             _bundleADV = Config.Bind("Extracting Tool", "ADV Bundle Path", "adv/scenario/", new ConfigDescription("Path of the ADV file inside the abdata folder.", null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 0 }));
 
