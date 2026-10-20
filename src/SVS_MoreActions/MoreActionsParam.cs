@@ -41,10 +41,10 @@ namespace SVS_MoreActions
         public class ActionAdvanceOptionsParam
         {
             public string[] ButtonSpritePath { get; set; }
+            public bool UseCustomLogic { get; set; } = false;
             public bool IsButtonHidden { get; set; } = false;
             public bool NeedAllConditions { get; set; } = false;
             public Dictionary<string, List<string>> ShowActionConditions { get; set; }
-
         }
         public class CategoryParam
         {

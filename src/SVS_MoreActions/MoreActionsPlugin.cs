@@ -11,6 +11,7 @@ namespace SVS_MoreActions
 {
     [BepInPlugin(GUID, DisplayName, Version)]
     [BepInDependency("DS27.SVS.ADVLoader", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("DS27.SVS.CustomLogic", BepInDependency.DependencyFlags.SoftDependency)]
     public class MoreActionsPlugin : BasePlugin
     {
         public const string DisplayName = "SVS_MoreActions";
@@ -29,11 +30,9 @@ namespace SVS_MoreActions
 
             _option_showLog = Config.Bind("Options", "Show Log", false, new ConfigDescription("Will add information of this mod operations to the LogOutput file.\nOnly enable this if you have issues", null, new ConfigurationManagerAttributes { Order = 9 }));
 
-
             if (!GetADVLoaderPlugin(true)) return;
             patchedHooks = Harmony.CreateAndPatchAll(typeof(Hooks));
         }
-
         private static bool GetADVLoaderPlugin(bool showWarning)
         {
             if (IL2CPPChainloader.Instance.Plugins.TryGetValue("DS27.SVS.ADVLoader", out var advLoader))
@@ -53,6 +52,15 @@ namespace SVS_MoreActions
                 Log.Log(LogLevel.Message, "MoreAction missing dependency: SVS_ADVLoader plugin not found");
             }
             return false;
+        }
+        public static bool GetCustomLogicPlugin(bool showWarning)
+        {
+            if (IL2CPPChainloader.Instance.Plugins.TryGetValue("DS27.SVS.CustomLogic", out var advloader)) return true;
+            else
+            {
+                if (showWarning) Log.Log(LogLevel.Message, "SVS_MoreActions missing dependency: SVS_CustomLogic.");
+                return false;
+            }
         }
         public static bool GetShowLog()
         {
@@ -87,6 +95,14 @@ namespace SVS_MoreActions
             {
                 return MoreActions.SetActionFavorMood(__instance, __result);
             }
+
+            /*[HarmonyPriority(800)]
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(SVThinking), nameof(SVThinking.OnUpdate))]
+            private static void NewActionNPC(SVThinking __result)
+            {
+                
+            }*/
         }
     }
 }

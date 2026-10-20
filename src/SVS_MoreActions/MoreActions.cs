@@ -28,6 +28,7 @@ namespace SVS_MoreActions
                 {
                     nos[i] = SimulationDefine.CommandNo.Continue;
                 }
+                int customActionsCount = 0;
                 int index = 53;
                 foreach (var actParam in actionList)
                 {
@@ -44,11 +45,13 @@ namespace SVS_MoreActions
                             if (index < nos.Length) nos[index] = (SimulationDefine.CommandNo)actParam.ActionID;
                         }
                         if (MoreActionsPlugin.GetShowLog()) MoreActionsPlugin.Log.LogInfo($"Action created: {actParam.ActionID} - {actParam.ActionName}");
+                        customActionsCount++;
                     }
                     index++;
                 }
                 MoreActionUI.SetLewdActions(commandMenu);
                 commandMenu._commandNos = nos;
+                MoreActionsPlugin.Log.LogInfo($"{customActionsCount} new actions created");
             }
         }         
         private static Il2CppSystem.Collections.Generic.List<float> SetJudgeBaseRates(Il2CppSystem.Collections.Generic.List<float> defaultBaseRates, List<float> judgeBaseRates)
@@ -270,6 +273,7 @@ namespace SVS_MoreActions
         }
         public static void JudgeAction(int commandID)
         {
+            if (Enum.IsDefined(typeof(SimulationDefine.CommandNo), commandID)) return;
             var advScene = ADVManager.Instance.gameObject.GetComponentInChildren<ADVScene>();
             if (advScene != null)
             {
@@ -347,7 +351,6 @@ namespace SVS_MoreActions
                     }
                 }
             }
-
         }
         private static void ShowButton(CommandUI commandMenu, MoreActionsParam.ActionParam actParam, bool IsShow)
         {
@@ -363,6 +366,14 @@ namespace SVS_MoreActions
         }
         private static bool ActionButtonConditions(MoreActionsParam.ActionParam actParam, Actor targetChara)
         {
+            /*if (actParam.AdvanceOptions.UseCustomLogic && )
+            {
+                if (MoreActionsPlugin.GetCustomLogicPlugin(false))
+                {
+                    //if (CustomLogic.CLActionButtonDisplay(actParam.ActionID)) return true;
+                }
+                return false;
+            }*/
             var charaPC = GameChara.Player;
             int trueCount = 0;
             if (MoreActionsPlugin.GetShowLog()) MoreActionsPlugin.Log.LogInfo($"Action {actParam.ActionID}_{actParam.ActionName} Conditions {actParam.AdvanceOptions.ShowActionConditions.Count} - Meet All: {actParam.AdvanceOptions.NeedAllConditions}");
@@ -609,6 +620,9 @@ namespace SVS_MoreActions
                         break;
                     case "islover":
                         if (charaPC.charasGameParam.memory.IsLoversContainsID(targetChara.charasGameParam.Index)) trueCount++;
+                        break;
+                    default:
+                        MoreActionsPlugin.Log.LogInfo($"Invalid or not Implemented Condition Key Value: {condition.Key}");
                         break;
                 }
                 if (!actParam.AdvanceOptions.NeedAllConditions && trueCount > 0) return true;
